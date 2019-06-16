@@ -15,6 +15,11 @@ GET     /App/Hello     App.Hello
 GET    /Post                                 Post.Index
 POST   /Post                                 Post.Create
 
+
+# Result.Index is a webpage for itself.
+GET     /Result                               Result.Index
+POST    /Result                               Result.Obtain
+
 # Ignore favicon requests
 GET     /favicon.ico                            404
 

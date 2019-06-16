@@ -1,0 +1,22 @@
+{{set . "title" "Results"}}
+{{template "header.html" .}}
+
+<header class="jumbotron" style="background-color:#A9F16C">
+        <div class="container">
+          <div class="row">
+            <h1>RESULTS</h1>
+            <a href="../"><p>Home Page</p></a>
+          </div>
+        </div>
+</header>
+
+<div>        
+    <h2>Analysis</h2>
+    <ul>
+        <li>Marketboard Price: {{.results.MarketboardPrice}}</li>
+        <li>Material Costs: {{.results.MaterialCosts}}</li>
+        <li>Profits: {{.results.Profits}}</li>
+        <li>Profit Percentage: {{.results.ProfitPercentage}}</li>
+    </ul>
+</div>
+{{template "footer.html" .}}

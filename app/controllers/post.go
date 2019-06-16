@@ -16,11 +16,10 @@ type Post struct {
 	*revel.Controller
 }
 
-// The issue is that the stuff from post.go is not being processed by the App.Index for some reason.
-// This means I need to start to understand how to route these together.
-// I'm not understanding how the routes affect the functions that are here, nor do I understand how the files are linked togehter.
-
+// Post go, is left here for practice and reference.
+// Delete later.
 func (c Post) Index() revel.Result {
+	// We need an array to show the multiple results.
 	posts := []models.Post{}
 	collection := Test.Database("Marketboard").Collection("babysteps")
 
