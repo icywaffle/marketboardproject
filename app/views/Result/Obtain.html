@@ -13,10 +13,27 @@
 <div>        
     <h2>Analysis</h2>
     <ul>
+        <li>ItemID: {{.results.ItemID}}</li>
+        <li>RecipeID: {{.results.RecipeID}}</li>
         <li>Marketboard Price: {{.results.MarketboardPrice}}</li>
         <li>Material Costs: {{.results.MaterialCosts}}</li>
         <li>Profits: {{.results.Profits}}</li>
         <li>Profit Percentage: {{.results.ProfitPercentage}}</li>
     </ul>
+    <form action="/Result/Obtain" method="post">
+      <div class="form-group">
+          <div class="row">
+              <label for="todo" class="col-xs-2">Todo</label>
+              <input type="number" name="itemID" class="col-xs-8">
+              <div class="col-xs-2">
+                  <button type="submit" class="btn btn-success">
+                      <i class="fa fa-plus"></i> Add Todo
+                  </button>
+              </div>            
+          </div>
+      </div>
+  </form>
+
 </div>
+
 {{template "footer.html" .}}

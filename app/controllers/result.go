@@ -23,5 +23,11 @@ func (c Result) Obtain() revel.Result {
 	xivapi.NetItemPrice(recipeID, &results)
 	return c.Render(results)
 
-	// Impletement the Form parameters, so that you can put in some recipe ID, and then you'll get an output with the results struct.
+}
+
+func (c Result) Update() revel.Result {
+	// Here we update the database price entries.
+	itemID, _ := strconv.Atoi(c.Params.Form.Get("itemID"))
+	xivapi.UpdateItemPrices(itemID)
+	return c.Redirect("/Result")
 }

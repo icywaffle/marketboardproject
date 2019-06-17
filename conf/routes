@@ -18,7 +18,9 @@ POST   /Post                                 Post.Create
 
 # Result.Index is a webpage for itself.
 GET     /Result                               Result.Index
-POST    /Result                               Result.Obtain
+POST    /Result/Obtain                   Result.Update
+POST    /Result/Index                   Result.Obtain
+
 
 # Ignore favicon requests
 GET     /favicon.ico                            404

@@ -2,6 +2,7 @@ package xivapi
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"marketboardproject/app/models"
 	"time"
@@ -48,17 +49,35 @@ func NetItemPrice(recipeID int, results *models.Result) {
 		}
 		materialtotal[itemID] = pricesum
 	}
-	_, basecurrent := avgprices(baseinfo.ItemResultTargetID, 1, baseprice)
-	results.MarketboardPrice = basecurrent
+	results.ItemID = baseinfo.ItemResultTargetID
+	results.RecipeID = recipeID
+	results.MarketboardPrice = baseprice.Sargatanas.Prices[0].PricePerUnit
 
 	// Assuming here, that the base materials will always be cheaper.
 	// We can analyze this more in the future.
 	materialcosts := findsum(baseinfo.ItemResultTargetID, baseinfo.IngredientNames, materialtotal, materialprices, materialingredients)
 	results.MaterialCosts = materialcosts
 
-	results.Profits = basecurrent - materialcosts
-	results.ProfitPercentage = (float32(basecurrent) - float32(materialcosts)) / float32(materialcosts) * 100
+	results.Profits = baseprice.Sargatanas.Prices[0].PricePerUnit - materialcosts
+	results.ProfitPercentage = (float32(baseprice.Sargatanas.Prices[0].PricePerUnit) - float32(materialcosts)) / float32(materialcosts) * 100
 
+}
+
+// Force updates only a single item
+func UpdateItemPrices(itemID int) {
+	pricecollection := dbconnect("Prices")
+	prices := findprices(pricecollection, itemID) // This will also handle cases, if the item is not in the database
+
+	// If the entries in the database is three days old, we need to actually update the prices, by forcibly going back to the API
+	// If the Added is zero, then it means that it's a vendor sold price. So there's no need to update.
+	now := time.Now()
+	if (now.Unix()-int64(prices.Sargatanas.Prices[0].Added)) > 3*24*60*60 && prices.Sargatanas.Prices[0].Added != 0 {
+
+		byteValue := apipriceconnect(itemID)
+		// Reupdate the prices information from grabbing from the API
+		prices = database.Jsonprices(byteValue)
+		database.UpdatePrices(pricecollection, *prices, itemID)
+	}
 }
 
 func findsum(itemID int, ingredientarray []int, materialtotal map[int]int, materialprices map[int][10]int, materialingredients map[int][]int) int {
@@ -144,10 +163,22 @@ func findprices(pricecollection *mongo.Collection, itemID int) *database.Prices 
 		priceresult = database.Ingredientprices(pricecollection, itemID)
 	}
 
+	// If the entries in the database is seven days old, we need to actually update the prices, by forcibly going back to the API
+	// If the Added is zero, then it means that it's a vendor sold price. So there's no need to update.
+	now := time.Now()
+	if (now.Unix()-int64(priceresult.Sargatanas.Prices[0].Added)) > 7*24*60*60 && priceresult.Sargatanas.Prices[0].Added != 0 {
+
+		byteValue := apipriceconnect(itemID)
+		// Reupdate the prices information from grabbing from the API
+		priceresult = database.Jsonprices(byteValue)
+		database.UpdatePrices(pricecollection, *priceresult, itemID)
+	}
+
 	return priceresult
 }
 
 func apirecipeconnect(recipeID int) []byte {
+
 	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
 	time.Sleep(100 * time.Millisecond)
 	// This ensures that when this function is called, it does not exceed the rate limit.
@@ -155,10 +186,12 @@ func apirecipeconnect(recipeID int) []byte {
 
 	websiteurl := urlstring.UrlItemRecipe(recipeID)
 	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
+	fmt.Println("Connected to API")
 	return byteValue
 }
 
 func apipriceconnect(itemID int) []byte {
+
 	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
 	time.Sleep(100 * time.Millisecond)
 	// This ensures that when this function is called, it does not exceed the rate limit.
@@ -166,6 +199,7 @@ func apipriceconnect(itemID int) []byte {
 
 	websiteurl := urlstring.UrlPrices(itemID)
 	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
+	fmt.Println("Connected to API")
 	return byteValue
 }
 
@@ -196,30 +230,4 @@ func dbconnect(collectionname string) *mongo.Collection {
 	collection := client.Database("Marketboard").Collection(collectionname)
 
 	return collection
-}
-
-func avgprices(ingredient int, ingredientamount int, matprices *database.Prices) (int, int) {
-
-	// Average Price History for the latest 20 entries.
-	var hissum int
-	for i := 0; i < len(matprices.Sargatanas.History) && i < 2; i++ {
-		hissum = hissum + matprices.Sargatanas.History[i].PricePerUnit
-	}
-
-	soldaverage := hissum / 2
-
-	// Average Price Listings for the latest 20 entries.
-
-	var listsum int
-	for i := 0; i < len(matprices.Sargatanas.Prices) && i < 2; i++ {
-		listsum = listsum + matprices.Sargatanas.Prices[i].PricePerUnit
-	}
-
-	currentaverage := listsum / 2
-
-	// Multiply by the ingredient amount.
-	averagesoldcost := soldaverage * ingredientamount
-	averagecurrentcost := currentaverage * ingredientamount
-
-	return averagesoldcost, averagecurrentcost
 }
