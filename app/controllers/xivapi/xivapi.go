@@ -216,7 +216,9 @@ func apiitemconnect(itemID int) []byte {
 
 // Collection names are either "Prices" or "Recipes"
 func dbconnect(collectionname string) *mongo.Collection {
-	clientOptions := options.Client().ApplyURI("mongodb://localhost:27017")
+	// Apply the user string mongoURI to be able to connect to the database
+	// In this case, since this is backend, only the server should be allowed to connect here.
+	clientOptions := options.Client().ApplyURI(mongoURI)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
 	if err != nil {
 		log.Fatal(err)
