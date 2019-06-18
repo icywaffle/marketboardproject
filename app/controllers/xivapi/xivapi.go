@@ -17,19 +17,16 @@ import (
 // Current issues.
 // We need to remove outliers from the price calculations.
 // We have to go into the recipes, and find those too.
-func NetItemPrice(recipeID int, results *models.Result) {
+func NetItemPrice(recipeID int, results *models.Result, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int) {
 
 	// Hold all the database info in terms of collections, so that you can manipulate it.
 	itemcollection := dbconnect("Recipes")
 	pricecollection := dbconnect("Prices")
 
 	// Uses the Recipe and Prices struct to hold all the information from the database.
-	baseinfo := finditem(itemcollection, recipeID)
-	baseprice := findprices(pricecollection, baseinfo.ItemResultTargetID)
+	baseinfo = finditem(itemcollection, recipeID)
+	baseprice = findprices(pricecollection, baseinfo.ItemResultTargetID)
 
-	//These two should be sent to the front end.
-	materialprices := make(map[int][10]int) // Already multiplied by the ingredient amounts.
-	materialingredients := make(map[int][]int)
 	// This can be calculated using the two above.
 	materialtotal := make(map[int]int)
 	/*
@@ -101,7 +98,7 @@ func findsum(itemID int, ingredientarray []int, materialtotal map[int]int, mater
 	return tiersum
 }
 
-func findpricesarray(itemcollection *mongo.Collection, pricecollection *mongo.Collection, baseinfo *database.Recipes, materialprices map[int][10]int, materialingredients map[int][]int) {
+func findpricesarray(itemcollection *mongo.Collection, pricecollection *mongo.Collection, baseinfo *models.Recipes, materialprices map[int][10]int, materialingredients map[int][]int) {
 	var pricearray [10]int
 	for i := 0; i < len(baseinfo.IngredientNames); i++ {
 		// Zero is an invalid material ID
@@ -129,7 +126,7 @@ func findpricesarray(itemcollection *mongo.Collection, pricecollection *mongo.Co
 
 }
 
-func finditem(itemcollection *mongo.Collection, recipeID int) *database.Recipes {
+func finditem(itemcollection *mongo.Collection, recipeID int) *models.Recipes {
 	// itemresult is the info in the recipeID
 	itemresult := database.Ingredientmaterials(itemcollection, recipeID)
 	// If the item is not in the database, then we should add it. 0 is an invalid itemID
@@ -144,7 +141,7 @@ func finditem(itemcollection *mongo.Collection, recipeID int) *database.Recipes 
 
 	return itemresult
 }
-func findprices(pricecollection *mongo.Collection, itemID int) *database.Prices {
+func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 	// The find the price of the ingredient itself.
 	priceresult := database.Ingredientprices(pricecollection, itemID)
 	// TODO : Fix this into the Ingredientprices function instead.

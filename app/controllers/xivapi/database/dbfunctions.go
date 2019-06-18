@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"marketboardproject/app/models"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -11,25 +12,25 @@ import (
 )
 
 // Calls ingredient amounts and item IDs, and returns the results
-func Ingredientmaterials(collection *mongo.Collection, recipeID int) *Recipes {
+func Ingredientmaterials(collection *mongo.Collection, recipeID int) *models.Recipes {
 	filter := bson.M{"RecipeID": recipeID}
-	var result Recipes
+	var result models.Recipes
 	collection.FindOne(context.TODO(), filter).Decode(&result)
 
 	return &result
 }
 
 // Call the prices from the database, and return the sold average and the current average
-func Ingredientprices(collection *mongo.Collection, itemID int) *Prices {
+func Ingredientprices(collection *mongo.Collection, itemID int) *models.Prices {
 	filter := bson.M{"ItemID": itemID}
-	var result Prices
+	var result models.Prices
 	collection.FindOne(context.TODO(), filter).Decode(&result)
 
 	return &result
 }
 
 // Pass information from jsonconv to this to input these values into the database.
-func InsertRecipe(collection *mongo.Collection, recipes Recipes, ingredientid []int, ingredientamount []int, ingredientrecipes [][]int) {
+func InsertRecipe(collection *mongo.Collection, recipes models.Recipes, ingredientid []int, ingredientamount []int, ingredientrecipes [][]int) {
 
 	Itemexample := bson.D{
 		primitive.E{Key: "Name", Value: recipes.Name},
@@ -50,7 +51,7 @@ func InsertRecipe(collection *mongo.Collection, recipes Recipes, ingredientid []
 
 }
 
-func InsertPrices(collection *mongo.Collection, prices Prices, itemID int) {
+func InsertPrices(collection *mongo.Collection, prices models.Prices, itemID int) {
 	// In cases that we don't have any market ready price, we need to grab the gil vendor price instead
 	if prices.VendorPrice != 0 {
 		Itemexample := bson.D{
@@ -85,14 +86,14 @@ func InsertPrices(collection *mongo.Collection, prices Prices, itemID int) {
 
 }
 
-func UpdatePrices(collection *mongo.Collection, prices Prices, itemID int) {
+func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int) {
 	filter := bson.M{"ItemID": itemID}
 
 	update := bson.D{
 		primitive.E{Key: "Sargatanas", Value: prices.Sargatanas},
 	}
 
-	var result Prices
+	var result models.Prices
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
 		InsertPrices(collection, prices, itemID)

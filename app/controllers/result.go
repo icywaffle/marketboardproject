@@ -19,10 +19,14 @@ func (c Result) Index() revel.Result {
 
 func (c Result) Obtain() revel.Result {
 	var results models.Result
+	var recipes models.Recipes
+	var prices models.Prices
+	// These maps can show which materials are different tiers of which crafted items.
+	materialprices := make(map[int][10]int)
+	materialingredients := make(map[int][]int)
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
-	xivapi.NetItemPrice(recipeID, &results)
-	return c.Render(results)
-
+	xivapi.NetItemPrice(recipeID, &results, &recipes, &prices, materialprices, materialingredients)
+	return c.Render(results, recipes, prices, materialprices, materialingredients)
 }
 
 func (c Result) Update() revel.Result {

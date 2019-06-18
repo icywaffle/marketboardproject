@@ -10,7 +10,7 @@ type App struct {
 
 func (c App) Index() revel.Result {
 
-	greeting := "Ass"
+	greeting := "test"
 	return c.Render(greeting)
 }
 

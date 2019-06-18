@@ -2,41 +2,10 @@ package database
 
 import (
 	"encoding/json"
+	"marketboardproject/app/models"
 )
 
 // Converts Recipe Pages of json, to arrays.
-
-type Recipes struct {
-	Name               string  `json:"Name" bson:"Name"`
-	ItemResultTargetID int     `json:"ItemResultTargetID" bson:"ItemID"` // This is the Item ID
-	ID                 int     `json:"ID" bson:"RecipeID"`               // This is the recipeID
-	CraftTypeTargetID  int     `json:"CraftTypeTargetID" bson:"CraftTypeTargetID"`
-	IngredientNames    []int   `bson:"IngredientName"`
-	IngredientAmounts  []int   `bson:"IngredientAmount"`
-	IngredientRecipes  [][]int `bson:"IngredientRecipes"`
-}
-
-type Prices struct {
-	ItemID     int `bson:"ItemID"`
-	Sargatanas struct {
-		History []struct {
-			Added        int  `json:"Added" bson:"Added"` // Time is in Unix epoch time
-			IsHQ         bool `json:"IsHQ" bson:"IsHQ"`
-			PricePerUnit int  `json:"PricePerUnit" bson:"PricePerUnit"`
-			PriceTotal   int  `json:"PriceTotal" bson:"PriceTotal"`
-			PurchaseDate int  `json:"PurchaseDate" bson:"PurchaseDate"`
-			Quantity     int  `json:"Quantity" bson:"Quantity"`
-		} `json:"History" bson:"History"`
-		Prices []struct {
-			Added        int  `json:"Added" bson:"Added"`
-			IsHQ         bool `json:"IsHQ" bson:"IsHQ"`
-			PricePerUnit int  `json:"PricePerUnit" bson:"PricePerUnit"`
-			PriceTotal   int  `json:"PriceTotal" bson:"PriceTotal"`
-			Quantity     int  `json:"Quantity" bson:"Quantity"`
-		} `json:"Prices" bson:"Prices"`
-	} `json:"Sargatanas" bson:"Sargatanas"`
-	VendorPrice int `json:"PriceMid"`
-}
 
 /////////////////Recipe Struct Here//////////////////////////
 
@@ -100,10 +69,10 @@ type IngredientRecipe struct {
 	} `json:"ItemIngredientRecipe9"`
 }
 
-func Jsonitemrecipe(byteValue []byte) (*Recipes, []int, []int, [][]int) {
+func Jsonitemrecipe(byteValue []byte) (*models.Recipes, []int, []int, [][]int) {
 
 	// Unmarshal the information into the structs
-	var recipes Recipes
+	var recipes models.Recipes
 	json.Unmarshal(byteValue, &recipes)
 
 	var amount AmountIngredient
@@ -176,9 +145,9 @@ func Jsonitemrecipe(byteValue []byte) (*Recipes, []int, []int, [][]int) {
 	return &recipes, matitemIDslice, amountslice, matrecipeIDslice
 }
 
-func Jsonprices(byteValue []byte) *Prices {
+func Jsonprices(byteValue []byte) *models.Prices {
 
-	var prices Prices
+	var prices models.Prices
 	json.Unmarshal(byteValue, &prices)
 
 	return &prices
