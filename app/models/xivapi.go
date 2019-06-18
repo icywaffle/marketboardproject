@@ -1,12 +1,13 @@
 package models
 
-type Result struct {
-	ItemID           int
-	RecipeID         int
-	MarketboardPrice int
-	MaterialCosts    int
-	Profits          int
-	ProfitPercentage float32
+type Profits struct {
+	ItemID           int     `bson:"ItemID"`
+	RecipeID         int     `bson:"RecipeID"`
+	MarketboardPrice int     `bson:"MarketboardPrice"`
+	MaterialCosts    int     `bson:"MaterialCosts"`
+	Profits          int     `bson:"Profits"`
+	ProfitPercentage float32 `bson:"ProfitPercentage"`
+	Added            int64   `bson:"Added"`
 }
 
 type Recipes struct {

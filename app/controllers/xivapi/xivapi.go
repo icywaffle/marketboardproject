@@ -17,11 +17,12 @@ import (
 // Current issues.
 // We need to remove outliers from the price calculations.
 // We have to go into the recipes, and find those too.
-func NetItemPrice(recipeID int, results *models.Result, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int) {
+func NetItemPrice(recipeID int, baseprofit *models.Profits, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int) {
 
 	// Hold all the database info in terms of collections, so that you can manipulate it.
 	itemcollection := dbconnect("Recipes")
 	pricecollection := dbconnect("Prices")
+	profitcollection := dbconnect("Profits")
 
 	// Uses the Recipe and Prices struct to hold all the information from the database.
 	baseinfo = finditem(itemcollection, recipeID)
@@ -34,11 +35,9 @@ func NetItemPrice(recipeID int, results *models.Result, baseinfo *models.Recipes
 		materialingredients shows the ingredients to make it ->   map[14146:[14147 14148 12534 0 0 0 0 0 14 17]
 		materialtotal shows the total price as a sum ->			  map[14146:6765]
 	*/
-
 	// Fills the maps
 	findpricesarray(itemcollection, pricecollection, baseinfo, materialprices, materialingredients)
 
-	// All these calculations below can be done in the front end javascript. This is here in the backend for reference.
 	for itemID, pricearray := range materialprices {
 		var pricesum int
 		for i := 0; i < len(pricearray); i++ {
@@ -46,18 +45,9 @@ func NetItemPrice(recipeID int, results *models.Result, baseinfo *models.Recipes
 		}
 		materialtotal[itemID] = pricesum
 	}
-	results.ItemID = baseinfo.ItemResultTargetID
-	results.RecipeID = recipeID
-	results.MarketboardPrice = baseprice.Sargatanas.Prices[0].PricePerUnit
 
-	// Assuming here, that the base materials will always be cheaper.
-	// We can analyze this more in the future.
-	materialcosts := findsum(baseinfo.ItemResultTargetID, baseinfo.IngredientNames, materialtotal, materialprices, materialingredients)
-	results.MaterialCosts = materialcosts
-
-	results.Profits = baseprice.Sargatanas.Prices[0].PricePerUnit - materialcosts
-	results.ProfitPercentage = (float32(baseprice.Sargatanas.Prices[0].PricePerUnit) - float32(materialcosts)) / float32(materialcosts) * 100
-
+	// Find Profit requires all the previous information from above.
+	baseprofit = findprofits(profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, baseinfo.ItemResultTargetID)
 }
 
 // Force updates only a single item
@@ -141,6 +131,8 @@ func finditem(itemcollection *mongo.Collection, recipeID int) *models.Recipes {
 
 	return itemresult
 }
+
+// Handles finding and updating the models.Prices
 func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 	// The find the price of the ingredient itself.
 	priceresult := database.Ingredientprices(pricecollection, itemID)
@@ -172,6 +164,43 @@ func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 	}
 
 	return priceresult
+}
+
+// Handles updates, obtaining, creating information about the baseprofits from models.Profits
+func findprofits(profitcollection *mongo.Collection, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int, itemID int) *models.Profits {
+	baseprofit := database.Ingredientprofits(profitcollection, itemID)
+	if baseprofit.ItemID == 0 {
+		fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, itemID)
+		database.InsertProfits(profitcollection, *baseprofit, itemID)
+	}
+
+	// If the entries in the database is more than seven days old, we need to recalculate and reinput into the database.
+	now := time.Now()
+	if (now.Unix()-int64(baseprofit.Added)) > 7*24*60*60 && baseprofit.Added != 0 {
+		fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, itemID)
+		database.UpdateProfits(profitcollection, *baseprofit, itemID)
+	}
+
+	return baseprofit
+}
+
+// Calculates and fills baseprofits with information from the models.Profits
+func fillbaseprofits(baseprofit *models.Profits, profitcollection *mongo.Collection, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int, itemID int) {
+	baseprofit.ItemID = baseinfo.ItemResultTargetID
+	baseprofit.RecipeID = baseinfo.ID
+	baseprofit.MarketboardPrice = baseprice.Sargatanas.Prices[0].PricePerUnit
+
+	// Assuming here, that the base materials will always be cheaper.
+	// We can analyze this more in the future.
+	materialcosts := findsum(baseinfo.ItemResultTargetID, baseinfo.IngredientNames, materialtotal, materialprices, materialingredients)
+	baseprofit.MaterialCosts = materialcosts
+
+	baseprofit.Profits = baseprice.Sargatanas.Prices[0].PricePerUnit - materialcosts
+	baseprofit.ProfitPercentage = (float32(baseprice.Sargatanas.Prices[0].PricePerUnit) - float32(materialcosts)) / float32(materialcosts) * 100
+
+	now := time.Now()
+	baseprofit.Added = now.Unix()
+
 }
 
 func apirecipeconnect(recipeID int) []byte {

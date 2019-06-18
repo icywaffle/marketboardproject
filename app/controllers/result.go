@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"fmt"
 	"marketboardproject/app/controllers/xivapi"
 	"marketboardproject/app/models"
 	"strconv"
@@ -18,7 +19,7 @@ func (c Result) Index() revel.Result {
 }
 
 func (c Result) Obtain() revel.Result {
-	var results models.Result
+	var results models.Profits
 	var recipes models.Recipes
 	var prices models.Prices
 	// These maps can show which materials are different tiers of which crafted items.
@@ -26,6 +27,7 @@ func (c Result) Obtain() revel.Result {
 	materialingredients := make(map[int][]int)
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
 	xivapi.NetItemPrice(recipeID, &results, &recipes, &prices, materialprices, materialingredients)
+	fmt.Println(results, recipes, prices)
 	return c.Render(results, recipes, prices, materialprices, materialingredients)
 }
 

@@ -5,7 +5,7 @@
 <header class="jumbotron" style="background-color:#A9F16C">
     <div class="container">
         <div class="row">
-            <h1>RESULTS</h1>
+            <h1>results</h1>
             <a href="../">
                 <p>Home Page</p>
             </a>
@@ -13,14 +13,14 @@
     </div>
 </header>
 
-<div>
+<section>
     <h2>Analysis</h2>
     <ul>
         <li>ItemID: {{.results.ItemID}}</li>
         <li>RecipeID: {{.results.RecipeID}}</li>
         <li>Marketboard Price: {{.results.MarketboardPrice}}</li>
         <li>Material Costs: {{.results.MaterialCosts}}</li>
-        <li>Profits: {{.results.Profits}}</li>
+        <li>Profit: {{.results.Profits}}</li>
         <li>Profit Percentage: {{.results.ProfitPercentage}}</li>
         <li>Main Materials : {{index .materialingredients .results.ItemID}}</li>
     </ul>
@@ -64,6 +64,6 @@
             </div>
         </div>
     </form>
-</div>
+</section>
 
 {{template "footer.html" .}}

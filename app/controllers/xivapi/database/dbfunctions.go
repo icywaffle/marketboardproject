@@ -29,6 +29,14 @@ func Ingredientprices(collection *mongo.Collection, itemID int) *models.Prices {
 	return &result
 }
 
+func Ingredientprofits(collection *mongo.Collection, itemID int) *models.Profits {
+	filter := bson.M{"ItemID": itemID}
+	var result models.Profits
+	collection.FindOne(context.TODO(), filter).Decode(&result)
+
+	return &result
+}
+
 // Pass information from jsonconv to this to input these values into the database.
 func InsertRecipe(collection *mongo.Collection, recipes models.Recipes, ingredientid []int, ingredientamount []int, ingredientrecipes [][]int) {
 
@@ -86,6 +94,16 @@ func InsertPrices(collection *mongo.Collection, prices models.Prices, itemID int
 
 }
 
+func InsertProfits(collection *mongo.Collection, profits models.Profits, itemID int) {
+	insertResult, err := collection.InsertOne(context.TODO(), profits)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("Inserted Item into Database: ", insertResult.InsertedID)
+
+}
+
 func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int) {
 	filter := bson.M{"ItemID": itemID}
 
@@ -102,4 +120,17 @@ func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int
 		fmt.Println("Updated Item into Database")
 	}
 
+}
+
+func UpdateProfits(collection *mongo.Collection, profits models.Profits, itemID int) {
+	filter := bson.M{"ItemID": itemID}
+
+	var result models.Prices
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		InsertProfits(collection, profits, itemID)
+	} else {
+		collection.UpdateOne(context.TODO(), filter, profits)
+		fmt.Println("Updated Item into Database")
+	}
 }

@@ -1,9 +1,12 @@
 function removeemptyarrays() {
-    for (i = 0; i < 10; i++) {
+    var listlength = 10
+    for (i = 0; i < listlength; i++) {
         if (document.getElementsByClassName("matMap")[i].innerHTML === "[]") {
             document.getElementsByClassName("matMap")[i].innerHTML = ""
             $("#materialrecipes li").eq(i).remove();
+            // When we remove an element from the list, the index and length will change.
             i--
+            listlength--
         }
 
     }
