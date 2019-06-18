@@ -5,7 +5,7 @@
 <header class="jumbotron" style="background-color:#A9F16C">
     <div class="container">
         <div class="row">
-            <h1>results</h1>
+            <h1>profits</h1>
             <a href="../">
                 <p>Home Page</p>
             </a>
@@ -16,17 +16,17 @@
 <section>
     <h2>Analysis</h2>
     <ul>
-        <li>ItemID: {{.results.ItemID}}</li>
-        <li>RecipeID: {{.results.RecipeID}}</li>
-        <li>Marketboard Price: {{.results.MarketboardPrice}}</li>
-        <li>Material Costs: {{.results.MaterialCosts}}</li>
-        <li>Profit: {{.results.Profits}}</li>
-        <li>Profit Percentage: {{.results.ProfitPercentage}}</li>
-        <li>Main Materials : {{index .materialingredients .results.ItemID}}</li>
+        <li>ItemID: {{.profits.ItemID}}</li>
+        <li>RecipeID: {{.profits.RecipeID}}</li>
+        <li>Marketboard Price: {{.profits.MarketboardPrice}}</li>
+        <li>Material Costs: {{.profits.MaterialCosts}}</li>
+        <li>Profit: {{.profits.Profits}}</li>
+        <li>Profit Percentage: {{.profits.ProfitPercentage}}</li>
+        <li>Main Materials : {{index .materialingredients .profits.ItemID}}</li>
     </ul>
     <h2>Material Recipes</h2>
     <ol id="materialrecipes">
-        {{range $i, $matID := index .materialingredients .results.ItemID}}
+        {{range $i, $matID := index .materialingredients .profits.ItemID}}
         <li>
             <span class="matID" id={{$matID}}>{{$matID}}</span>
             <span class="matMap">{{index $.materialingredients $matID}}</span>

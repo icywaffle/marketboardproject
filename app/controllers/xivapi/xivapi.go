@@ -17,7 +17,7 @@ import (
 // Current issues.
 // We need to remove outliers from the price calculations.
 // We have to go into the recipes, and find those too.
-func NetItemPrice(recipeID int, baseprofit *models.Profits, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int) {
+func NetItemPrice(recipeID int, materialprices map[int][10]int, materialingredients map[int][]int) (*models.Profits, *models.Recipes, *models.Prices) {
 
 	// Hold all the database info in terms of collections, so that you can manipulate it.
 	itemcollection := dbconnect("Recipes")
@@ -25,8 +25,8 @@ func NetItemPrice(recipeID int, baseprofit *models.Profits, baseinfo *models.Rec
 	profitcollection := dbconnect("Profits")
 
 	// Uses the Recipe and Prices struct to hold all the information from the database.
-	baseinfo = finditem(itemcollection, recipeID)
-	baseprice = findprices(pricecollection, baseinfo.ItemResultTargetID)
+	baseinfo := finditem(itemcollection, recipeID)
+	baseprice := findprices(pricecollection, baseinfo.ItemResultTargetID)
 
 	// This can be calculated using the two above.
 	materialtotal := make(map[int]int)
@@ -47,7 +47,8 @@ func NetItemPrice(recipeID int, baseprofit *models.Profits, baseinfo *models.Rec
 	}
 
 	// Find Profit requires all the previous information from above.
-	baseprofit = findprofits(profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, baseinfo.ItemResultTargetID)
+	baseprofit := findprofits(profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, baseinfo.ItemResultTargetID)
+	return baseprofit, baseinfo, baseprice
 }
 
 // Force updates only a single item
