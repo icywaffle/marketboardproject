@@ -9,6 +9,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 // Calls ingredient amounts and item IDs, and returns the results
@@ -35,6 +36,18 @@ func Ingredientprofits(collection *mongo.Collection, itemID int) *models.Profits
 	collection.FindOne(context.TODO(), filter).Decode(&result)
 
 	return &result
+}
+
+// When calling this function, you should close the cursor after being done with it.
+func Profitcomparisons(collection *mongo.Collection) *mongo.Cursor {
+	options := options.FindOptions{}
+
+	options.Sort = bson.D{{Key: "ProfitPercentage", Value: -1}}
+	limit := int64(20)
+	options.Limit = &limit
+	cursor, _ := collection.Find(context.Background(), bson.D{}, &options)
+	return cursor
+
 }
 
 // Pass information from jsonconv to this to input these values into the database.

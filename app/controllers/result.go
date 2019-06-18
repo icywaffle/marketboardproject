@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"marketboardproject/app/controllers/xivapi"
 	"strconv"
 
@@ -24,7 +23,6 @@ func (c Result) Obtain() revel.Result {
 	materialingredients := make(map[int][]int)
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
 	profits, recipes, prices := xivapi.NetItemPrice(recipeID, materialprices, materialingredients)
-	fmt.Println(profits, recipes, prices)
 	return c.Render(profits, recipes, prices, materialprices, materialingredients)
 }
 
@@ -33,4 +31,10 @@ func (c Result) Update() revel.Result {
 	itemID, _ := strconv.Atoi(c.Params.Form.Get("itemID"))
 	xivapi.UpdateItemPrices(itemID)
 	return c.Redirect("/Result")
+}
+
+func (c Result) Profit() revel.Result {
+	profitpercentage := xivapi.CompareProfits()
+
+	return c.Render(profitpercentage)
 }

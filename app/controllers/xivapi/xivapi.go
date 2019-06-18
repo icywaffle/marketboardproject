@@ -68,6 +68,25 @@ func UpdateItemPrices(itemID int) {
 	}
 }
 
+func CompareProfits() []*models.Profits {
+	profitcollection := dbconnect("Profits")
+
+	// Close the cursor once you've iterated through it.
+	profitdocuments := database.Profitcomparisons(profitcollection)
+
+	// Append all of the cursor elements to the allprofits array of information
+	var allprofits []*models.Profits
+	for profitdocuments.Next(context.TODO()) {
+		var tempprofits models.Profits
+		profitdocuments.Decode(&tempprofits)
+
+		allprofits = append(allprofits, &tempprofits)
+	}
+	defer profitdocuments.Close(context.TODO())
+
+	return allprofits
+}
+
 func findsum(itemID int, ingredientarray []int, materialtotal map[int]int, materialprices map[int][10]int, materialingredients map[int][]int) int {
 	var tiersum int
 	// Some materials are base items, so these base items won't have a map key for prices.
