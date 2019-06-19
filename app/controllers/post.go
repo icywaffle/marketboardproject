@@ -3,12 +3,12 @@ package controllers
 import (
 	"context"
 	"log"
+	"marketboardproject/app/controllers/xivapi"
 	"marketboardproject/app/models"
 	"strconv"
 
 	"github.com/revel/revel"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -57,17 +57,14 @@ func (c Post) Index() revel.Result {
 }
 
 func (c Post) Create() revel.Result {
-
+	profitpercentage := xivapi.CompareProfits()
 	collection := Test.Database("Marketboard").Collection("babysteps")
 
 	var post models.Post
 	post.ID, _ = strconv.Atoi(c.Params.Form.Get("ID"))
 
 	// Insert into the document, whatever was inputted as the post.Name from HTML.
-	Itemexample := bson.D{
-		primitive.E{Key: "ID", Value: post.ID},
-	}
-	_, err := collection.InsertOne(context.TODO(), Itemexample)
+	_, err := collection.InsertOne(context.TODO(), profitpercentage[0])
 	if err != nil {
 		log.Fatal(err)
 	}

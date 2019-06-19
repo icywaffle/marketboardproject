@@ -110,16 +110,14 @@ func InsertProfits(collection *mongo.Collection, profits models.Profits) {
 func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int) {
 	filter := bson.M{"ItemID": itemID}
 
-	update := bson.D{
-		primitive.E{Key: "Sargatanas", Value: prices.Sargatanas},
-	}
-
 	var result models.Prices
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		InsertPrices(collection, prices, itemID)
+		fmt.Println("Unable to Update to Prices")
 	} else {
-		collection.UpdateOne(context.TODO(), filter, update)
+		collection.UpdateOne(context.TODO(), filter, bson.D{
+			{Key: "$set", Value: prices},
+		})
 		fmt.Println("Updated Item into Prices Collection :", itemID)
 	}
 
@@ -128,12 +126,14 @@ func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int
 func UpdateProfits(collection *mongo.Collection, profits models.Profits, recipeID int) {
 	filter := bson.M{"RecipeID": recipeID}
 
-	var result models.Prices
+	var result models.Profits
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		InsertProfits(collection, profits)
+		fmt.Println("Unable to Update to Profits")
 	} else {
-		collection.UpdateOne(context.TODO(), filter, profits)
+		collection.UpdateOne(context.TODO(), filter, bson.D{
+			{Key: "$set", Value: profits},
+		})
 		fmt.Println("Updated Item into Profit Collection :", recipeID)
 	}
 }
@@ -141,12 +141,15 @@ func UpdateProfits(collection *mongo.Collection, profits models.Profits, recipeI
 func UpdateRecipes(collection *mongo.Collection, recipes models.Recipes) {
 	filter := bson.M{"RecipeID": recipes.ID}
 
-	var result models.Prices
+	//recipesdocument, _ := structtobsond(recipes)
+	var result models.Recipes
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		InsertRecipe(collection, recipes)
+		fmt.Println("Unable to Update to Recipes")
 	} else {
-		collection.UpdateOne(context.TODO(), filter, recipes)
+		collection.UpdateOne(context.TODO(), filter, bson.D{
+			{Key: "$set", Value: recipes},
+		})
 		fmt.Println("Updated Item into Recipe Collection :", recipes.ID)
 	}
 }

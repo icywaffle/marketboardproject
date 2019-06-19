@@ -11,11 +11,11 @@ type Profits struct {
 }
 
 type Recipes struct {
-	Name               string  `json:"Name" bson:"Name"`
-	ItemResultTargetID int     `json:"ItemResultTargetID" bson:"ItemID"`
-	ID                 int     `json:"ID" bson:"RecipeID"`
-	CraftTypeTargetID  int     `json:"CraftTypeTargetID" bson:"CraftTypeTargetID"`
-	AmountResult       int     `json:"AmountResult" bson:"AmountResult"`
+	Name               string  `bson:"Name" json:"Name"`
+	ItemResultTargetID int     `bson:"ItemID" json:"ItemResultTargetID"`
+	ID                 int     `bson:"RecipeID" json:"ID"`
+	CraftTypeTargetID  int     `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
+	AmountResult       int     `bson:"AmountResult" json:"AmountResult"`
 	IngredientNames    []int   `bson:"IngredientName"`
 	IngredientAmounts  []int   `bson:"IngredientAmount"`
 	IngredientRecipes  [][]int `bson:"IngredientRecipes"`
