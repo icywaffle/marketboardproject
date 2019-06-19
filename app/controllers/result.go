@@ -21,15 +21,15 @@ func (c Result) Obtain() revel.Result {
 	// These maps can show which materials are different tiers of which crafted items.
 	materialprices := make(map[int][10]int)
 	materialingredients := make(map[int][]int)
+	materialtotal := make(map[int]int)
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
-	profits, recipes, prices := xivapi.NetItemPrice(recipeID, materialprices, materialingredients)
+	profits, recipes, prices := xivapi.NetItemPrice(recipeID, materialprices, materialingredients, materialtotal)
 	return c.Render(profits, recipes, prices, materialprices, materialingredients)
 }
 
-func (c Result) Update() revel.Result {
-	// Here we update the database price entries.
+func (c Result) UpdatePrices() revel.Result {
 	itemID, _ := strconv.Atoi(c.Params.Form.Get("itemID"))
-	xivapi.UpdateItemPrices(itemID)
+	xivapi.ForceUpdateItemPrices(itemID)
 	return c.Redirect("/Result")
 }
 
@@ -37,4 +37,12 @@ func (c Result) Profit() revel.Result {
 	profitpercentage := xivapi.CompareProfits()
 
 	return c.Render(profitpercentage)
+}
+
+// Create the update Recipes as well.
+// check database to find if we actually have added Amount Results, in the Recipes.
+func (c Result) UpdateProfits() revel.Result {
+	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
+	xivapi.ForceUpdateProfits(recipeID)
+	return c.Redirect("/Result/Profit")
 }

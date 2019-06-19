@@ -30,8 +30,8 @@ func Ingredientprices(collection *mongo.Collection, itemID int) *models.Prices {
 	return &result
 }
 
-func Ingredientprofits(collection *mongo.Collection, itemID int) *models.Profits {
-	filter := bson.M{"ItemID": itemID}
+func Ingredientprofits(collection *mongo.Collection, recipeID int) *models.Profits {
+	filter := bson.M{"RecipeID": recipeID}
 	var result models.Profits
 	collection.FindOne(context.TODO(), filter).Decode(&result)
 
@@ -107,7 +107,7 @@ func InsertPrices(collection *mongo.Collection, prices models.Prices, itemID int
 
 }
 
-func InsertProfits(collection *mongo.Collection, profits models.Profits, itemID int) {
+func InsertProfits(collection *mongo.Collection, profits models.Profits) {
 	insertResult, err := collection.InsertOne(context.TODO(), profits)
 	if err != nil {
 		log.Fatal(err)
@@ -135,13 +135,13 @@ func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int
 
 }
 
-func UpdateProfits(collection *mongo.Collection, profits models.Profits, itemID int) {
-	filter := bson.M{"ItemID": itemID}
+func UpdateProfits(collection *mongo.Collection, profits models.Profits, recipeID int) {
+	filter := bson.M{"RecipeID": recipeID}
 
 	var result models.Prices
 	err := collection.FindOne(context.TODO(), filter).Decode(&result)
 	if err != nil {
-		InsertProfits(collection, profits, itemID)
+		InsertProfits(collection, profits)
 	} else {
 		collection.UpdateOne(context.TODO(), filter, profits)
 		fmt.Println("Updated Item into Database")

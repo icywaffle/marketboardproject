@@ -15,6 +15,7 @@ type Recipes struct {
 	ItemResultTargetID int     `json:"ItemResultTargetID" bson:"ItemID"`
 	ID                 int     `json:"ID" bson:"RecipeID"`
 	CraftTypeTargetID  int     `json:"CraftTypeTargetID" bson:"CraftTypeTargetID"`
+	AmountResult       int     `json:"AmountResult" bson:"AmountResult"`
 	IngredientNames    []int   `bson:"IngredientName"`
 	IngredientAmounts  []int   `bson:"IngredientAmount"`
 	IngredientRecipes  [][]int `bson:"IngredientRecipes"`

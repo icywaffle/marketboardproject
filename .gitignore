@@ -3,3 +3,4 @@ tmp/
 routes/
 /app/controllers/xivapi/urlstring/apikeys.go
 /app/controllers/xivapi/dbkeys.go
+/conf/app.conf

@@ -17,7 +17,7 @@ import (
 // Current issues.
 // We need to remove outliers from the price calculations.
 // We have to go into the recipes, and find those too.
-func NetItemPrice(recipeID int, materialprices map[int][10]int, materialingredients map[int][]int) (*models.Profits, *models.Recipes, *models.Prices) {
+func NetItemPrice(recipeID int, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int) (*models.Profits, *models.Recipes, *models.Prices) {
 
 	// Hold all the database info in terms of collections, so that you can manipulate it.
 	itemcollection := dbconnect("Recipes")
@@ -28,13 +28,6 @@ func NetItemPrice(recipeID int, materialprices map[int][10]int, materialingredie
 	baseinfo := finditem(itemcollection, recipeID)
 	baseprice := findprices(pricecollection, baseinfo.ItemResultTargetID)
 
-	// This can be calculated using the two above.
-	materialtotal := make(map[int]int)
-	/*
-		materialprices shows prices for it's total materials ->	  map[14146:[1158 3057 1000 0 0 0 0 0 1050 500]]
-		materialingredients shows the ingredients to make it ->   map[14146:[14147 14148 12534 0 0 0 0 0 14 17]
-		materialtotal shows the total price as a sum ->			  map[14146:6765]
-	*/
 	// Fills the maps
 	findpricesarray(itemcollection, pricecollection, baseinfo, materialprices, materialingredients)
 
@@ -47,25 +40,35 @@ func NetItemPrice(recipeID int, materialprices map[int][10]int, materialingredie
 	}
 
 	// Find Profit requires all the previous information from above.
-	baseprofit := findprofits(profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, baseinfo.ItemResultTargetID)
+	baseprofit := findprofits(profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal)
 	return baseprofit, baseinfo, baseprice
 }
 
-// Force updates only a single item
-func UpdateItemPrices(itemID int) {
+// Force database to update the entries of prices
+func ForceUpdateItemPrices(itemID int) {
 	pricecollection := dbconnect("Prices")
 	prices := findprices(pricecollection, itemID) // This will also handle cases, if the item is not in the database
 
-	// If the entries in the database is three days old, we need to actually update the prices, by forcibly going back to the API
-	// If the Added is zero, then it means that it's a vendor sold price. So there's no need to update.
-	now := time.Now()
-	if (now.Unix()-int64(prices.Sargatanas.Prices[0].Added)) > 3*24*60*60 && prices.Sargatanas.Prices[0].Added != 0 {
+	// This allows us to force update, just in cases where we need to add entries to the database.
+	byteValue := apipriceconnect(itemID)
+	// Reupdate the prices information from grabbing from the API
+	prices = database.Jsonprices(byteValue)
+	database.UpdatePrices(pricecollection, *prices, itemID)
 
-		byteValue := apipriceconnect(itemID)
-		// Reupdate the prices information from grabbing from the API
-		prices = database.Jsonprices(byteValue)
-		database.UpdatePrices(pricecollection, *prices, itemID)
-	}
+}
+
+// Change this forceupdate profits
+// Issues : When it's updating, it uses the database info. But when we call the main function,
+// The main function calls the profits creation, which updates due to dates.
+// Are we actually calling the database of profits? Or are we recalculating every time.
+func ForceUpdateProfits(recipeID int) {
+	profitcollection := dbconnect("Profits")
+	materialprices := make(map[int][10]int)
+	materialingredients := make(map[int][]int)
+	materialtotal := make(map[int]int)
+	baseprofit, baseinfo, baseprice := NetItemPrice(recipeID, materialprices, materialingredients, materialtotal)
+	fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal)
+	database.UpdateProfits(profitcollection, *baseprofit, baseinfo.ID)
 }
 
 func CompareProfits() []*models.Profits {
@@ -187,25 +190,27 @@ func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 }
 
 // Handles updates, obtaining, creating information about the baseprofits from models.Profits
-func findprofits(profitcollection *mongo.Collection, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int, itemID int) *models.Profits {
-	baseprofit := database.Ingredientprofits(profitcollection, itemID)
+func findprofits(profitcollection *mongo.Collection, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int) *models.Profits {
+	// Inside the database
+	baseprofit := database.Ingredientprofits(profitcollection, baseinfo.ID)
+	// If not inside the database, call the database, and fill it up with information
 	if baseprofit.ItemID == 0 {
-		fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, itemID)
-		database.InsertProfits(profitcollection, *baseprofit, itemID)
+		fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal)
+		database.InsertProfits(profitcollection, *baseprofit)
 	}
 
 	// If the entries in the database is more than seven days old, we need to recalculate and reinput into the database.
 	now := time.Now()
 	if (now.Unix()-int64(baseprofit.Added)) > 7*24*60*60 && baseprofit.Added != 0 {
-		fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal, itemID)
-		database.UpdateProfits(profitcollection, *baseprofit, itemID)
+		fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal)
+		database.UpdateProfits(profitcollection, *baseprofit, baseinfo.ID)
 	}
 
 	return baseprofit
 }
 
 // Calculates and fills baseprofits with information from the models.Profits
-func fillbaseprofits(baseprofit *models.Profits, profitcollection *mongo.Collection, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int, itemID int) {
+func fillbaseprofits(baseprofit *models.Profits, profitcollection *mongo.Collection, baseinfo *models.Recipes, baseprice *models.Prices, materialprices map[int][10]int, materialingredients map[int][]int, materialtotal map[int]int) {
 	baseprofit.ItemID = baseinfo.ItemResultTargetID
 	baseprofit.RecipeID = baseinfo.ID
 	baseprofit.MarketboardPrice = baseprice.Sargatanas.Prices[0].PricePerUnit
@@ -240,9 +245,6 @@ func apipriceconnect(itemID int) []byte {
 
 	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
 	time.Sleep(100 * time.Millisecond)
-	// This ensures that when this function is called, it does not exceed the rate limit.
-	// TODO: Use a channel to rate limit instead to allow multiple users to use this.
-
 	websiteurl := urlstring.UrlPrices(itemID)
 	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
 	fmt.Println("Connected to API")
@@ -252,11 +254,9 @@ func apipriceconnect(itemID int) []byte {
 func apiitemconnect(itemID int) []byte {
 	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
 	time.Sleep(100 * time.Millisecond)
-	// This ensures that when this function is called, it does not exceed the rate limit.
-	// TODO: Use a channel to rate limit instead to allow multiple users to use this.
-
 	websiteurl := urlstring.UrlItem(itemID)
 	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
+	fmt.Println("Connected to API")
 	return byteValue
 }
 
