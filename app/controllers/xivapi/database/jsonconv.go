@@ -69,7 +69,7 @@ type IngredientRecipe struct {
 	} `json:"ItemIngredientRecipe9"`
 }
 
-func Jsonitemrecipe(byteValue []byte) (*models.Recipes, []int, []int, [][]int) {
+func Jsonitemrecipe(byteValue []byte) *models.Recipes {
 
 	// Unmarshal the information into the structs
 	var recipes models.Recipes
@@ -142,7 +142,11 @@ func Jsonitemrecipe(byteValue []byte) (*models.Recipes, []int, []int, [][]int) {
 		matrecipeIDslice[9] = append(matrecipeIDslice[9], matrecipeID.ItemIngredientRecipe9[i].ID)
 	}
 
-	return &recipes, matitemIDslice, amountslice, matrecipeIDslice
+	// These are custom things that we can add to the Recipes documents
+	recipes.IngredientNames = matitemIDslice
+	recipes.IngredientAmounts = amountslice
+	recipes.IngredientRecipes = matrecipeIDslice
+	return &recipes
 }
 
 func Jsonprices(byteValue []byte) *models.Prices {

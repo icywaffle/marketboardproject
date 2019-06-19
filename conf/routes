@@ -23,7 +23,6 @@ POST    /Result/Profit                        Result.UpdateProfits
 POST    /Result/Obtain                        Result.UpdatePrices
 POST    /Result/Index                         Result.Obtain
 
-
 # Ignore favicon requests
 GET     /favicon.ico                            404
 

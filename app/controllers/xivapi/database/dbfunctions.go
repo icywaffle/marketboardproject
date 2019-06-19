@@ -51,19 +51,9 @@ func Profitcomparisons(collection *mongo.Collection) *mongo.Cursor {
 }
 
 // Pass information from jsonconv to this to input these values into the database.
-func InsertRecipe(collection *mongo.Collection, recipes models.Recipes, ingredientid []int, ingredientamount []int, ingredientrecipes [][]int) {
+func InsertRecipe(collection *mongo.Collection, recipes models.Recipes) {
 
-	Itemexample := bson.D{
-		primitive.E{Key: "Name", Value: recipes.Name},
-		primitive.E{Key: "ItemID", Value: recipes.ItemResultTargetID},
-		primitive.E{Key: "RecipeID", Value: recipes.ID},
-		primitive.E{Key: "CraftTypeTargetID", Value: recipes.CraftTypeTargetID},
-		primitive.E{Key: "IngredientName", Value: ingredientid},
-		primitive.E{Key: "IngredientAmount", Value: ingredientamount},
-		primitive.E{Key: "IngredientRecipes", Value: ingredientrecipes},
-	}
-
-	insertResult, err := collection.InsertOne(context.TODO(), Itemexample)
+	insertResult, err := collection.InsertOne(context.TODO(), recipes)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -130,7 +120,7 @@ func UpdatePrices(collection *mongo.Collection, prices models.Prices, itemID int
 		InsertPrices(collection, prices, itemID)
 	} else {
 		collection.UpdateOne(context.TODO(), filter, update)
-		fmt.Println("Updated Item into Database")
+		fmt.Println("Updated Item into Prices Collection :", itemID)
 	}
 
 }
@@ -144,6 +134,19 @@ func UpdateProfits(collection *mongo.Collection, profits models.Profits, recipeI
 		InsertProfits(collection, profits)
 	} else {
 		collection.UpdateOne(context.TODO(), filter, profits)
-		fmt.Println("Updated Item into Database")
+		fmt.Println("Updated Item into Profit Collection :", recipeID)
+	}
+}
+
+func UpdateRecipes(collection *mongo.Collection, recipes models.Recipes) {
+	filter := bson.M{"RecipeID": recipes.ID}
+
+	var result models.Prices
+	err := collection.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		InsertRecipe(collection, recipes)
+	} else {
+		collection.UpdateOne(context.TODO(), filter, recipes)
+		fmt.Println("Updated Item into Recipe Collection :", recipes.ID)
 	}
 }

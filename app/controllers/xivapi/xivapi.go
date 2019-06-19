@@ -47,20 +47,21 @@ func NetItemPrice(recipeID int, materialprices map[int][10]int, materialingredie
 // Force database to update the entries of prices
 func ForceUpdateItemPrices(itemID int) {
 	pricecollection := dbconnect("Prices")
-	prices := findprices(pricecollection, itemID) // This will also handle cases, if the item is not in the database
 
-	// This allows us to force update, just in cases where we need to add entries to the database.
+	// Connects to the API and takes the market listed price
 	byteValue := apipriceconnect(itemID)
-	// Reupdate the prices information from grabbing from the API
-	prices = database.Jsonprices(byteValue)
-	database.UpdatePrices(pricecollection, *prices, itemID)
+	prices := database.Jsonprices(byteValue)
+	// If there is no market listed price, then it must mean that there's a vendor selling it.
+	if len(prices.Sargatanas.History) == 0 && len(prices.Sargatanas.Prices) == 0 {
+		// This information comes from the item page. Let's unmarshal the vendor price into the price struct.
+		byteValue = apiitemconnect(itemID)
+		prices = database.Jsonprices(byteValue)
+	}
 
+	database.UpdatePrices(pricecollection, *prices, itemID)
 }
 
-// Change this forceupdate profits
-// Issues : When it's updating, it uses the database info. But when we call the main function,
-// The main function calls the profits creation, which updates due to dates.
-// Are we actually calling the database of profits? Or are we recalculating every time.
+// Force database to update the entries of Profits
 func ForceUpdateProfits(recipeID int) {
 	profitcollection := dbconnect("Profits")
 	materialprices := make(map[int][10]int)
@@ -69,6 +70,16 @@ func ForceUpdateProfits(recipeID int) {
 	baseprofit, baseinfo, baseprice := NetItemPrice(recipeID, materialprices, materialingredients, materialtotal)
 	fillbaseprofits(baseprofit, profitcollection, baseinfo, baseprice, materialprices, materialingredients, materialtotal)
 	database.UpdateProfits(profitcollection, *baseprofit, baseinfo.ID)
+}
+
+func ForceUpdateRecipes(recipeID int) {
+	itemcollection := dbconnect("Recipes")
+
+	byteValue := apirecipeconnect(recipeID)
+	recipes := database.Jsonitemrecipe(byteValue)
+
+	database.UpdateRecipes(itemcollection, *recipes)
+
 }
 
 func CompareProfits() []*models.Profits {
@@ -146,8 +157,9 @@ func finditem(itemcollection *mongo.Collection, recipeID int) *models.Recipes {
 	if itemresult.ID == 0 {
 		byteValue := apirecipeconnect(recipeID)
 		// TODO : create a json struct that has all these variables.
-		recipes, matIDs, amounts, matrecipes := database.Jsonitemrecipe(byteValue)
-		database.InsertRecipe(itemcollection, *recipes, matIDs, amounts, matrecipes)
+		recipes := database.Jsonitemrecipe(byteValue)
+
+		database.InsertRecipe(itemcollection, *recipes)
 
 		itemresult = database.Ingredientmaterials(itemcollection, recipeID)
 	}
