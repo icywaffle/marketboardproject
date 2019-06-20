@@ -58,7 +58,7 @@ func InsertRecipe(collection *mongo.Collection, recipes models.Recipes) {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Inserted Item into Database: ", insertResult.InsertedID)
+	fmt.Println("Inserted Recipe into Database: ", insertResult.InsertedID)
 
 }
 
@@ -78,7 +78,7 @@ func InsertPrices(collection *mongo.Collection, prices models.Prices, itemID int
 			log.Fatal(err)
 		}
 
-		fmt.Println("Inserted Item into Database: ", insertResult.InsertedID)
+		fmt.Println("Inserted Prices into Database: ", insertResult.InsertedID)
 	} else {
 
 		Itemexample := bson.D{
@@ -91,7 +91,7 @@ func InsertPrices(collection *mongo.Collection, prices models.Prices, itemID int
 			log.Fatal(err)
 		}
 
-		fmt.Println("Inserted Item into Database: ", insertResult.InsertedID)
+		fmt.Println("Inserted Prices into Database: ", insertResult.InsertedID)
 
 	}
 
@@ -103,7 +103,7 @@ func InsertProfits(collection *mongo.Collection, profits models.Profits) {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Inserted Item into Database: ", insertResult.InsertedID)
+	fmt.Println("Inserted Profits into Database: ", insertResult.InsertedID)
 
 }
 
