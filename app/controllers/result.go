@@ -16,17 +16,23 @@ func (c Result) Index() revel.Result {
 	return c.Render(greetings)
 }
 
+// collection := DB.Collection(collectionname)
 func (c Result) Obtain() revel.Result {
 
-	// These maps can show which materials are different tiers of which crafted items.
-	materialprices := make(map[int][10]int)
-	materialingredients := make(map[int][]int)
-	materialtotal := make(map[int]int)
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
-	profits, recipes, prices := xivapi.NetItemPrice(recipeID, materialprices, materialingredients, materialtotal)
-	return c.Render(profits, recipes, prices, materialprices, materialingredients)
+
+	mongocollections := xivapi.Collections{
+		Prices:  DB.Collection("Prices"),
+		Recipes: DB.Collection("Recipes"),
+		Profits: DB.Collection("Profits")}
+
+	baseinfo, matmaps := mongocollections.BaseInformation(recipeID)
+
+	profits := baseinfo.ProfitInformation(&mongocollections, matmaps)
+	return c.Render(profits, matmaps)
 }
 
+/*
 // Allows user to either update recipes or prices on one page. Also allows a user to do both at the same time.
 func (c Result) UpdatePrices() revel.Result {
 	itemID, _ := strconv.Atoi(c.Params.Form.Get("itemID"))
@@ -52,3 +58,4 @@ func (c Result) UpdateProfits() revel.Result {
 	xivapi.ForceUpdateProfits(recipeID)
 	return c.Redirect("/Result/Profit")
 }
+*/

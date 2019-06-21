@@ -10,17 +10,12 @@ module:testrunner
 GET     /                                       App.Index
 GET     /App/Hello     App.Hello
 
-# Grabs these methods Post.anyfunction, and will run them in the context of GET, POST, etc., in the folder /Post.
-# Inside these htmls, you can grab the information {{.information}}, provided you used the method to return c.Render(information)
-GET    /Post                                 Post.Index
-POST   /Post                                 Post.Create
-
 
 # Example : POST from /Result/Index.html calls the Obtain function, which renders the Obtain page.
 GET     /Result                               Result.Index
-GET     /Result/Profit                        Result.Profit 
-POST    /Result/Profit                        Result.UpdateProfits
-POST    /Result/Obtain                        Result.UpdatePrices
+#GET     /Result/Profit                        Result.Profit 
+#POST    /Result/Profit                        Result.UpdateProfits
+#POST    /Result/Obtain                        Result.UpdatePrices
 POST    /Result/Index                         Result.Obtain
 
 # Ignore favicon requests

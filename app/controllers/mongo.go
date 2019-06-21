@@ -9,8 +9,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var Test *mongo.Client
+var DB *mongo.Database
 
+// Initializes DB so it would give the Clients so that we can access the database
 func InitDB() {
 	clientOptions := options.Client().ApplyURI(xivapi.MongoURI)
 	client, err := mongo.Connect(context.TODO(), clientOptions)
@@ -23,6 +24,6 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
-	Test = client
+	DB = client.Database("Marketboard")
 
 }
