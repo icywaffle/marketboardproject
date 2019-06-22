@@ -3,13 +3,14 @@ package controllers
 import (
 	"context"
 	"log"
+	"marketboardproject/app/controllers/xivapi"
 	"marketboardproject/keys"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-var DB *mongo.Database
+var DB xivapi.Collections
 
 // Initializes DB so it would give the Clients so that we can access the database
 func InitDB() {
@@ -24,6 +25,10 @@ func InitDB() {
 		log.Fatal(err)
 	}
 
-	DB = client.Database("Marketboard")
+	database := client.Database("Marketboard")
 
+	DB = xivapi.Collections{
+		Prices:  database.Collection("Prices"),
+		Recipes: database.Collection("Recipes"),
+		Profits: database.Collection("Profits")}
 }

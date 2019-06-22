@@ -74,3 +74,26 @@ func (t *AppTest) TestIngredientMaterials() {
 func (t *AppTest) After() {
 	println("Tear down")
 }
+
+/*
+A good test looks like this
+
+It tests some function, with a REALLY DESCRIPTIVE NAME
+def test_initial_score(self):
+// Then it provides some Mock dependency.
+  database = MockDatabase()
+  // We're basically using a filter here to find a user from the mock.
+  database.add_row({
+      'username': 'joe123',
+      'score': 150.0
+	})
+
+	// This is a helper function, which helps pull things from the database.
+	// Use these functions only to help boil down the code if needed, but not too much.
+  account_manager = AccountManager(database)
+
+  //
+  initial_score = account_manager.get_score(username='joe123')
+
+  self.assertEqual(150.0, initial_score)
+*/

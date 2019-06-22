@@ -1,10 +1,13 @@
 package xivapi
 
 import (
+	"context"
+	"fmt"
 	"marketboardproject/app/controllers/xivapi/database"
 	"marketboardproject/app/models"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -25,72 +28,146 @@ type Information struct {
 func (coll *Collections) BaseInformation(recipeID int) *Information {
 
 	var info Information
-	var matprofitmaps models.Matprofitmaps
 
-	// The information must be filled in order.
-	info.Recipes = findrecipe(coll.Recipes, recipeID)
-	info.Prices = findprices(coll.Prices, info.Recipes.ItemResultTargetID)
-	info.Profits = findprofits(coll, &info, &matprofitmaps)
-	info.Matprofitmaps = fillprofitmaps(coll, info.Recipes)
+	// Each info depends on the previous one.
+	info.Recipes = coll.findrecipe(recipeID)
+	info.Prices = coll.findprices(info.Recipes.ItemResultTargetID)
+	info.Profits = coll.findprofits(&info)
+
 	return &info
 }
 
-func findrecipe(itemcollection *mongo.Collection, recipeID int) *models.Recipes {
-	// itemresult is the info in the recipeID
-	itemresult := database.Ingredientmaterials(itemcollection, recipeID)
-	// If the item is not in the database, then we should add it. 0 is an invalid itemID
-	if itemresult.ID == 0 {
-		byteValue := database.ApiConnect(recipeID, "recipe")
-		// TODO : create a json struct that has all these variables.
-		recipes := database.Jsonitemrecipe(byteValue)
+// Calls ingredient amounts and item IDs, and returns the results
+func (coll *Collections) queryrecipes(recipeID int) *models.Recipes {
+	filter := bson.M{"RecipeID": recipeID}
+	var result models.Recipes
+	coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
 
-		database.InsertRecipe(itemcollection, *recipes)
-
-		itemresult = database.Ingredientmaterials(itemcollection, recipeID)
-	}
-
-	return itemresult
+	return &result
 }
 
-// Handles finding and updating the models.Prices
-func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
-	// The find the price of the ingredient itself.
-	priceresult := database.Ingredientprices(pricecollection, itemID)
-	// TODO : Fix this into the Ingredientprices function instead.
-	if priceresult.ItemID == 0 {
+// Call the prices from the database, and return the sold average and the current average
+func (coll *Collections) queryprices(itemID int) *models.Prices {
+	filter := bson.M{"ItemID": itemID}
+	var result models.Prices
+	coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
+
+	return &result
+}
+
+func (coll *Collections) queryprofits(recipeID int) *models.Profits {
+	filter := bson.M{"RecipeID": recipeID}
+	var result models.Profits
+	coll.Profits.FindOne(context.TODO(), filter).Decode(&result)
+
+	return &result
+}
+
+// Will access the API if there's no recipe in the database.
+func (coll *Collections) findrecipe(recipeID int) *models.Recipes {
+	// Only info.Recipes is filled.
+	recipeinfo := coll.queryrecipes(recipeID)
+	// If the item is not in the database, then we should add it. 0 is an invalid itemID
+	if recipeinfo.ID == 0 {
+		byteValue := database.ApiConnect(recipeID, "recipe")
+		recipeinfo = database.Jsonitemrecipe(byteValue)
+
+		database.InsertRecipe(coll.Recipes, *recipeinfo)
+
+	}
+
+	return recipeinfo
+}
+
+// Will access API if there's no prices in the database. Will also auto update.
+func (coll *Collections) findprices(itemID int) *models.Prices {
+	// Only info.Prices is filled
+	pricesinfo := coll.queryprices(itemID)
+	// If the item is not in the database, then we should add it. 0 is an invalid itemID
+	if pricesinfo.ItemID == 0 {
 		byteValue := database.ApiConnect(itemID, "market/item")
-		// Connects to the API and takes the market listed price
-		prices := database.Jsonprices(byteValue)
+		pricesinfo = database.Jsonprices(byteValue)
 		// If there is no market listed price, then it must mean that there's a vendor selling it.
-		if len(prices.Sargatanas.History) == 0 && len(prices.Sargatanas.Prices) == 0 {
+		if len(pricesinfo.Sargatanas.History) == 0 && len(pricesinfo.Sargatanas.Prices) == 0 {
 			// This information comes from the item page. Let's unmarshal the vendor price into the price struct.
 			byteValue = database.ApiConnect(itemID, "item")
-			prices = database.Jsonprices(byteValue)
+			pricesinfo = database.Jsonprices(byteValue)
 		}
-		database.InsertPrices(pricecollection, *prices, itemID)
-
-		priceresult = database.Ingredientprices(pricecollection, itemID)
+		database.InsertPrices(coll.Prices, *pricesinfo, itemID)
 	}
 
 	// If the entries in the database is seven days old, we need to actually update the prices, by forcibly going back to the API
-	// If the Added is zero, then it means that it's a vendor sold price. So there's no need to update.
 	now := time.Now()
-	if len(priceresult.Sargatanas.Prices) > 0 {
-		if (now.Unix()-int64(priceresult.Sargatanas.Prices[0].Added)) > 7*24*60*60 && priceresult.Sargatanas.Prices[0].Added != 0 {
-
-			byteValue := database.ApiConnect(itemID, "market/item")
-			// Reupdate the prices information from grabbing from the API
-			priceresult = database.Jsonprices(byteValue)
-			database.UpdatePrices(pricecollection, *priceresult, itemID)
+	if len(pricesinfo.Sargatanas.Prices) > 0 {
+		// There's no need to update if we're looking at the VendorPrice.
+		if pricesinfo.VendorPrice == 0 {
+			// Marketboard could be empty, and we can try to check again.
+			if len(pricesinfo.Sargatanas.Prices) == 0 || (now.Unix()-int64(pricesinfo.Sargatanas.Prices[0].Added)) > 7*24*60*60 {
+				byteValue := database.ApiConnect(itemID, "market/item")
+				pricesinfo = database.Jsonprices(byteValue)
+				fmt.Println("Entry is Seven Days Old.")
+				database.UpdatePrices(coll.Prices, *pricesinfo, itemID)
+			}
 		}
 
 	}
 
-	return priceresult
+	return pricesinfo
+}
+
+// Handles updates, obtaining, creating information about the baseprofits from models.Profits
+func (coll *Collections) findprofits(info *Information) *models.Profits {
+	// Inside the database
+	profitsinfo := coll.queryprofits(info.Recipes.ID)
+	info.Matprofitmaps = coll.fillprofitmaps(info.Recipes)
+	// If not inside the database, call the database, and fill it up with information
+	if profitsinfo.ItemID == 0 {
+		profitsinfo = coll.fillbaseprofits(info, info.Matprofitmaps)
+		database.InsertProfits(coll.Profits, *profitsinfo)
+	}
+
+	// If the entries in the database is more than seven days old, we need to recalculate and reinput into the database.
+	now := time.Now()
+	if (now.Unix()-int64(profitsinfo.Added)) > 7*24*60*60 && profitsinfo.Added != 0 {
+		coll.fillbaseprofits(info, info.Matprofitmaps)
+		database.UpdateProfits(coll.Profits, *profitsinfo, info.Recipes.ID)
+	}
+
+	return profitsinfo
+}
+
+// Fills the Profits struct
+func (coll *Collections) fillbaseprofits(info *Information, matprofitmaps *models.Matprofitmaps) *models.Profits {
+
+	var profits models.Profits
+	profits.ItemID = info.Recipes.ItemResultTargetID
+	profits.RecipeID = info.Recipes.ID
+
+	// Some items won't have a market history, because they're from vendors.
+	var itempriceperunit int
+	if info.Prices.VendorPrice != 0 {
+		itempriceperunit = info.Prices.VendorPrice
+	} else {
+		itempriceperunit = info.Prices.Sargatanas.Prices[0].PricePerUnit
+	}
+	profits.MarketboardPrice = itempriceperunit
+
+	// Assuming here, that the base materials will always be cheaper.
+	// We can analyze this more in the future.
+	materialcosts := coll.findsum(info, matprofitmaps)
+	profits.MaterialCosts = materialcosts
+
+	profits.Profits = itempriceperunit - materialcosts
+	profits.ProfitPercentage = (float32(itempriceperunit) - float32(materialcosts)) / float32(materialcosts) * 100
+
+	now := time.Now()
+	profits.Added = now.Unix()
+
+	return &profits
 }
 
 // Uses the price collection from the database to fill the individual material maps.
-func fillprofitmaps(coll *Collections, baserecipe *models.Recipes) *models.Matprofitmaps {
+func (coll *Collections) fillprofitmaps(baserecipe *models.Recipes) *models.Matprofitmaps {
 	var pricearray [10]int
 	var matprofitmaps models.Matprofitmaps
 	matprofitmaps.Costs = make(map[int][10]int)
@@ -99,11 +176,17 @@ func fillprofitmaps(coll *Collections, baserecipe *models.Recipes) *models.Matpr
 	for i := 0; i < len(baserecipe.IngredientNames); i++ {
 		// Zero is an invalid material ID
 		if baserecipe.IngredientNames[i] != 0 {
-			matpriceinfo := findprices(coll.Prices, baserecipe.IngredientNames[i])
-			// The issue is for Camphorwood Branch or buyable things
-			// It's in a different layout because NPC bought things are not available in the market.
-			// In these cases, if null, then we go to the item, and look for PriceMid.
-			pricearray[i] = matpriceinfo.Sargatanas.Prices[0].PricePerUnit * baserecipe.IngredientAmounts[i]
+			matpriceinfo := coll.findprices(baserecipe.IngredientNames[i])
+			// We need to deal with vendor prices, since they won't have market prices.
+			if matpriceinfo.VendorPrice != 0 {
+				pricearray[i] = matpriceinfo.VendorPrice * baserecipe.IngredientAmounts[i]
+			} else {
+				if len(matpriceinfo.Sargatanas.Prices) > 0 {
+					pricearray[i] = matpriceinfo.Sargatanas.Prices[0].PricePerUnit * baserecipe.IngredientAmounts[i]
+				}
+
+			}
+
 		} else {
 			continue
 		}
@@ -116,8 +199,8 @@ func fillprofitmaps(coll *Collections, baserecipe *models.Recipes) *models.Matpr
 	// If there's a recipe, we want to go in one more materialprices, and keep appending to it.
 	for i := 0; i < len(baserecipe.IngredientRecipes); i++ {
 		if len(baserecipe.IngredientRecipes[i]) != 0 {
-			matinfo := findrecipe(coll.Recipes, baserecipe.IngredientRecipes[i][0])
-			fillprofitmaps(coll, matinfo)
+			matinfo := coll.findrecipe(baserecipe.IngredientRecipes[i][0])
+			coll.fillprofitmaps(matinfo)
 		}
 	}
 
@@ -132,49 +215,7 @@ func fillprofitmaps(coll *Collections, baserecipe *models.Recipes) *models.Matpr
 	return &matprofitmaps
 }
 
-// Handles updates, obtaining, creating information about the baseprofits from models.Profits
-// Matprofitmaps
-// Information
-// Profit Collection.
-func findprofits(coll *Collections, info *Information, matprofitmaps *models.Matprofitmaps) *models.Profits {
-	// Inside the database
-	baseprofit := database.Ingredientprofits(coll.Profits, info.Recipes.ID)
-	// If not inside the database, call the database, and fill it up with information
-	if baseprofit.ItemID == 0 {
-		fillbaseprofits(coll, info, matprofitmaps)
-		database.InsertProfits(coll.Profits, *baseprofit)
-	}
-
-	// If the entries in the database is more than seven days old, we need to recalculate and reinput into the database.
-	now := time.Now()
-	if (now.Unix()-int64(baseprofit.Added)) > 7*24*60*60 && baseprofit.Added != 0 {
-		fillbaseprofits(coll, info, matprofitmaps)
-		database.UpdateProfits(coll.Profits, *baseprofit, info.Recipes.ID)
-	}
-
-	return baseprofit
-}
-
-// Fills the Profits struct
-func fillbaseprofits(coll *Collections, info *Information, matprofitmaps *models.Matprofitmaps) {
-	info.Profits.ItemID = info.Recipes.ItemResultTargetID
-	info.Profits.RecipeID = info.Recipes.ID
-	info.Profits.MarketboardPrice = info.Prices.Sargatanas.Prices[0].PricePerUnit
-
-	// Assuming here, that the base materials will always be cheaper.
-	// We can analyze this more in the future.
-	materialcosts := findsum(coll, info, matprofitmaps)
-	info.Profits.MaterialCosts = materialcosts
-
-	info.Profits.Profits = info.Prices.Sargatanas.Prices[0].PricePerUnit - materialcosts
-	info.Profits.ProfitPercentage = (float32(info.Prices.Sargatanas.Prices[0].PricePerUnit) - float32(materialcosts)) / float32(materialcosts) * 100
-
-	now := time.Now()
-	info.Profits.Added = now.Unix()
-
-}
-
-func findsum(coll *Collections, info *Information, matprofitmaps *models.Matprofitmaps) int {
+func (coll *Collections) findsum(info *Information, matprofitmaps *models.Matprofitmaps) int {
 	var tiersum int
 	// Some materials are base items, so these base items won't have a map key for prices.
 	temppricearray := matprofitmaps.Costs[info.Recipes.ItemResultTargetID]
@@ -187,10 +228,10 @@ func findsum(coll *Collections, info *Information, matprofitmaps *models.Matprof
 				var materialinfo *Information
 				// We're going to need to find the information about the inner materials.
 				// For now, we will deal with just the first recipe.
-				materialinfo.Recipes = findrecipe(coll.Recipes, info.Recipes.IngredientRecipes[i][0])
-				materialinfo.Prices = findprices(coll.Prices, info.Recipes.IngredientNames[i])
+				materialinfo.Recipes = coll.findrecipe(info.Recipes.IngredientRecipes[i][0])
+				materialinfo.Prices = coll.findprices(info.Recipes.IngredientNames[i])
 				// We we need to redefine the materialtotalprice with the one that is found by looking at the prices of the materials within the materials.
-				materialtotalprice = findsum(coll, materialinfo, matprofitmaps)
+				materialtotalprice = coll.findsum(materialinfo, matprofitmaps)
 			}
 			temppricearray[i] = materialtotalprice
 		}
@@ -257,12 +298,5 @@ func CompareProfits() []*models.Profits {
 
 	return allprofits
 }
-
-
-
-
-// Calculates and fills baseprofits with information from the models.Profits
-
-
 
 */

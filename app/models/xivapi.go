@@ -47,7 +47,7 @@ type Prices struct {
 			Quantity     int  `json:"Quantity" bson:"Quantity"`
 		} `json:"Prices" bson:"Prices"`
 	} `json:"Sargatanas" bson:"Sargatanas"`
-	VendorPrice int `json:"PriceMid"`
+	VendorPrice int `json:"PriceMid" bson:"VendorPrice"`
 }
 
 // Lets also learn some dependency injections

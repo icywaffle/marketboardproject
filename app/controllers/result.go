@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"marketboardproject/app/controllers/xivapi"
 	"strconv"
 
 	"github.com/revel/revel"
@@ -21,12 +20,7 @@ func (c Result) Obtain() revel.Result {
 
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
 
-	mongocollections := xivapi.Collections{
-		Prices:  DB.Collection("Prices"),
-		Recipes: DB.Collection("Recipes"),
-		Profits: DB.Collection("Profits")}
-
-	baseinfo := mongocollections.BaseInformation(recipeID)
+	baseinfo := DB.BaseInformation(recipeID)
 
 	return c.Render(baseinfo)
 }

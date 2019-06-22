@@ -12,34 +12,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-// Calls ingredient amounts and item IDs, and returns the results
-func Ingredientmaterials(collection *mongo.Collection, recipeID int) *models.Recipes {
-	filter := bson.M{"RecipeID": recipeID}
-	var result models.Recipes
-	collection.FindOne(context.TODO(), filter).Decode(&result)
-
-	return &result
-}
-
-// Call the prices from the database, and return the sold average and the current average
-func Ingredientprices(collection *mongo.Collection, itemID int) *models.Prices {
-	filter := bson.M{"ItemID": itemID}
-	var result models.Prices
-	collection.FindOne(context.TODO(), filter).Decode(&result)
-
-	return &result
-}
-
-func Ingredientprofits(collection *mongo.Collection, recipeID int) *models.Profits {
-	filter := bson.M{"RecipeID": recipeID}
-	var result models.Profits
-	collection.FindOne(context.TODO(), filter).Decode(&result)
-
-	return &result
-}
-
 // When calling this function, you should close the cursor after being done with it.
-func Profitcomparisons(collection *mongo.Collection) *mongo.Cursor {
+func ProfitDescCursor(collection *mongo.Collection) *mongo.Cursor {
 	options := options.FindOptions{}
 
 	options.Sort = bson.D{{Key: "ProfitPercentage", Value: -1}}
@@ -67,11 +41,7 @@ func InsertPrices(collection *mongo.Collection, prices models.Prices, itemID int
 	if prices.VendorPrice != 0 {
 		Itemexample := bson.D{
 			primitive.E{Key: "ItemID", Value: itemID},
-			{Key: "Sargatanas", Value: bson.D{
-				{Key: "Prices", Value: bson.A{bson.D{
-					{Key: "Added", Value: 0},
-					{Key: "PricePerUnit", Value: prices.VendorPrice}}}},
-			}},
+			{Key: "Vendor Price", Value: prices.VendorPrice},
 		}
 		insertResult, err := collection.InsertOne(context.TODO(), Itemexample)
 		if err != nil {
