@@ -1,9 +1,7 @@
 package xivapi
 
 import (
-	"fmt"
 	"marketboardproject/app/controllers/xivapi/database"
-	"marketboardproject/app/controllers/xivapi/urlstring"
 	"marketboardproject/app/models"
 	"time"
 
@@ -16,42 +14,33 @@ type Collections struct {
 	Profits *mongo.Collection
 }
 
+type Information struct {
+	Recipes       *models.Recipes
+	Prices        *models.Prices
+	Profits       *models.Profits
+	Matprofitmaps *models.Matprofitmaps
+}
+
 // Fills out information about the base item's Prices and Profits.
-func (coll *Collections) BaseInformation(recipeID int) (*Information, *models.Matprofitmaps) {
+func (coll *Collections) BaseInformation(recipeID int) *Information {
 
 	var info Information
+	var matprofitmaps models.Matprofitmaps
 
-	// We need to try and separate the dependencies here.
-	// We need to look through these inner functions to try and see if we can separate them here.
-	info.Recipes = finditem(coll.Recipes, recipeID)
-
-	// You can already see that this function depends on the function above it.
-	// The dependencies here are too closely linked together.
+	// The information must be filled in order.
+	info.Recipes = findrecipe(coll.Recipes, recipeID)
 	info.Prices = findprices(coll.Prices, info.Recipes.ItemResultTargetID)
-
-	return &info, fillprofitmaps(coll, info.Recipes)
+	info.Profits = findprofits(coll, &info, &matprofitmaps)
+	info.Matprofitmaps = fillprofitmaps(coll, info.Recipes)
+	return &info
 }
 
-type Information struct {
-	Recipes *models.Recipes
-	Prices  *models.Prices
-	Profits *models.Profits
-}
-
-func (filled *Information) ProfitInformation(coll *Collections, matprofitmaps *models.Matprofitmaps) *models.Profits {
-
-	// Find Profit requires all the previous information from above.
-	baseprofit := findprofits(coll, filled, matprofitmaps)
-
-	return baseprofit
-}
-
-func finditem(itemcollection *mongo.Collection, recipeID int) *models.Recipes {
+func findrecipe(itemcollection *mongo.Collection, recipeID int) *models.Recipes {
 	// itemresult is the info in the recipeID
 	itemresult := database.Ingredientmaterials(itemcollection, recipeID)
 	// If the item is not in the database, then we should add it. 0 is an invalid itemID
 	if itemresult.ID == 0 {
-		byteValue := apirecipeconnect(recipeID)
+		byteValue := database.ApiConnect(recipeID, "recipe")
 		// TODO : create a json struct that has all these variables.
 		recipes := database.Jsonitemrecipe(byteValue)
 
@@ -69,13 +58,13 @@ func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 	priceresult := database.Ingredientprices(pricecollection, itemID)
 	// TODO : Fix this into the Ingredientprices function instead.
 	if priceresult.ItemID == 0 {
-		byteValue := apipriceconnect(itemID)
+		byteValue := database.ApiConnect(itemID, "market/item")
 		// Connects to the API and takes the market listed price
 		prices := database.Jsonprices(byteValue)
 		// If there is no market listed price, then it must mean that there's a vendor selling it.
 		if len(prices.Sargatanas.History) == 0 && len(prices.Sargatanas.Prices) == 0 {
 			// This information comes from the item page. Let's unmarshal the vendor price into the price struct.
-			byteValue = apiitemconnect(itemID)
+			byteValue = database.ApiConnect(itemID, "item")
 			prices = database.Jsonprices(byteValue)
 		}
 		database.InsertPrices(pricecollection, *prices, itemID)
@@ -89,7 +78,7 @@ func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 	if len(priceresult.Sargatanas.Prices) > 0 {
 		if (now.Unix()-int64(priceresult.Sargatanas.Prices[0].Added)) > 7*24*60*60 && priceresult.Sargatanas.Prices[0].Added != 0 {
 
-			byteValue := apipriceconnect(itemID)
+			byteValue := database.ApiConnect(itemID, "market/item")
 			// Reupdate the prices information from grabbing from the API
 			priceresult = database.Jsonprices(byteValue)
 			database.UpdatePrices(pricecollection, *priceresult, itemID)
@@ -98,18 +87,6 @@ func findprices(pricecollection *mongo.Collection, itemID int) *models.Prices {
 	}
 
 	return priceresult
-}
-func apirecipeconnect(recipeID int) []byte {
-
-	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
-	time.Sleep(100 * time.Millisecond)
-	// This ensures that when this function is called, it does not exceed the rate limit.
-	// TODO: Use a channel to rate limit instead to allow multiple users to use this.
-
-	websiteurl := urlstring.UrlItemRecipe(recipeID)
-	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
-	fmt.Println("Connected to API")
-	return byteValue
 }
 
 // Uses the price collection from the database to fill the individual material maps.
@@ -139,7 +116,7 @@ func fillprofitmaps(coll *Collections, baserecipe *models.Recipes) *models.Matpr
 	// If there's a recipe, we want to go in one more materialprices, and keep appending to it.
 	for i := 0; i < len(baserecipe.IngredientRecipes); i++ {
 		if len(baserecipe.IngredientRecipes[i]) != 0 {
-			matinfo := finditem(coll.Recipes, baserecipe.IngredientRecipes[i][0])
+			matinfo := findrecipe(coll.Recipes, baserecipe.IngredientRecipes[i][0])
 			fillprofitmaps(coll, matinfo)
 		}
 	}
@@ -210,7 +187,7 @@ func findsum(coll *Collections, info *Information, matprofitmaps *models.Matprof
 				var materialinfo *Information
 				// We're going to need to find the information about the inner materials.
 				// For now, we will deal with just the first recipe.
-				materialinfo.Recipes = finditem(coll.Recipes, info.Recipes.IngredientRecipes[i][0])
+				materialinfo.Recipes = findrecipe(coll.Recipes, info.Recipes.IngredientRecipes[i][0])
 				materialinfo.Prices = findprices(coll.Prices, info.Recipes.IngredientNames[i])
 				// We we need to redefine the materialtotalprice with the one that is found by looking at the prices of the materials within the materials.
 				materialtotalprice = findsum(coll, materialinfo, matprofitmaps)
@@ -221,24 +198,6 @@ func findsum(coll *Collections, info *Information, matprofitmaps *models.Matprof
 		tiersum += temppricearray[i]
 	}
 	return tiersum
-}
-
-func apipriceconnect(itemID int) []byte {
-
-	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
-	time.Sleep(100 * time.Millisecond)
-	websiteurl := urlstring.UrlPrices(itemID)
-	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
-	fmt.Println("Connected to API")
-	return byteValue
-}
-func apiitemconnect(itemID int) []byte {
-	// MAX Rate limit is 20 Req/s -> 0.05s/Req, but safer to use 15req/s -> 0.06s/req
-	time.Sleep(100 * time.Millisecond)
-	websiteurl := urlstring.UrlItem(itemID)
-	byteValue := urlstring.XiviapiRecipeConnector(websiteurl)
-	fmt.Println("Connected to API")
-	return byteValue
 }
 
 /*

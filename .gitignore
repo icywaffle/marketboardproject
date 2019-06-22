@@ -1,6 +1,5 @@
 test-results/
 tmp/
 routes/
-/app/controllers/xivapi/urlstring/apikeys.go
-/app/controllers/xivapi/dbkeys.go
+/keys/keys.go
 /conf/app.conf

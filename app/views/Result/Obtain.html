@@ -16,14 +16,15 @@
 <section>
     <h2>Analysis</h2>
     <ul>
-        <li>ItemID: {{.profits.ItemID}}</li>
-        <li>RecipeID: {{.profits.RecipeID}}</li>
-        <li>Amount Result from RecipeID: {{.recipes.AmountResult}}</li>
-        <li>Marketboard Price: {{.profits.MarketboardPrice}}</li>
-        <li>Material Costs: {{.profits.MaterialCosts}}</li>
-        <li>Profit: {{.profits.Profits}}</li>
-        <li>Profit Percentage: {{.profits.ProfitPercentage}}</li>
+        <li>ItemID: {{.baseinfo.Profits.ItemID}}</li>
+        <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
+        <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
+        <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
+        <li>Material Costs: {{.baseinfo.Profits.MaterialCosts}}</li>
+        <li>Profit: {{.baseinfo.Profits.Profits}}</li>
+        <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}</li>
     </ul>
+
 </section>
 
 {{template "footer.html" .}}

@@ -26,10 +26,9 @@ func (c Result) Obtain() revel.Result {
 		Recipes: DB.Collection("Recipes"),
 		Profits: DB.Collection("Profits")}
 
-	baseinfo, matmaps := mongocollections.BaseInformation(recipeID)
+	baseinfo := mongocollections.BaseInformation(recipeID)
 
-	profits := baseinfo.ProfitInformation(&mongocollections, matmaps)
-	return c.Render(profits, matmaps)
+	return c.Render(baseinfo)
 }
 
 /*

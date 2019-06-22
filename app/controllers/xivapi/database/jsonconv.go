@@ -2,7 +2,14 @@ package database
 
 import (
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
 	"marketboardproject/app/models"
+	"marketboardproject/keys"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 // Converts Recipe Pages of json, to arrays.
@@ -67,6 +74,54 @@ type IngredientRecipe struct {
 	ItemIngredientRecipe9 []struct {
 		ID int `json:"ID"`
 	} `json:"ItemIngredientRecipe9"`
+}
+
+// idtype should be "recipe", "item", or "market/item"
+func ApiConnect(inputid int, idtype string) []byte {
+	// MAX Rate limit is 30 Req/s -> 0.033s/Req. It's safer to use something
+	time.Sleep(45 * time.Millisecond)
+	byteValue := xivapiconnector(websiteurl(inputid, idtype))
+	fmt.Println("Connected to API")
+	return byteValue
+}
+
+func websiteurl(userID int, idtype string) string {
+	//Example: https://xivapi.com/Item/14160
+	basewebsite := []byte("https://xivapi.com/")
+	field := []byte(idtype)
+	uniqueID := []byte(strconv.Itoa(userID))
+	completefield := append(field[:], '/')
+	userinputurl := append(append(basewebsite[:], completefield[:]...), uniqueID[:]...)
+
+	//Add Authkey to the URL
+	authkey := []byte(keys.XivAuthKey)
+	websiteurl := append(append(userinputurl[:], '?'), authkey[:]...)
+
+	//Example: https://xivapi.com/market/item/3?authkey&servers=Phoenix,Lich,Moogle
+	if idtype == "market/item" {
+		servers := []byte("&servers=Sargatanas")
+		websiteurl = append(websiteurl[:], servers[:]...)
+	}
+
+	s := string(websiteurl)
+	return s
+}
+
+func xivapiconnector(websiteurl string) []byte {
+
+	//What this does, is open the file, and read it
+	jsonFile, err := http.Get(websiteurl)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// Takes the jsonFile.Body, and put it into memory as byteValue array.
+	byteValue, err := ioutil.ReadAll(jsonFile.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	defer jsonFile.Body.Close()
+
+	return byteValue
 }
 
 func Jsonitemrecipe(byteValue []byte) *models.Recipes {
