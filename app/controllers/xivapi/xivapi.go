@@ -3,6 +3,7 @@ package xivapi
 import (
 	"context"
 	"fmt"
+
 	"marketboardproject/app/controllers/xivapi/database"
 	"marketboardproject/app/models"
 

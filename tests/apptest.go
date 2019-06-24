@@ -1,6 +1,10 @@
 package tests
 
 import (
+	"fmt"
+	"marketboardproject/app/controllers/xivapi"
+	"marketboardproject/app/models"
+
 	"github.com/revel/revel/testing"
 )
 
@@ -9,6 +13,46 @@ type AppTest struct {
 	testing.TestSuite
 }
 
+type FakeCollections struct {
+}
+
+// Mock CollectionHandler Interfaces
+// These methods fill out the struct, rather than calling a database or API for information.
+func (fake FakeCollections) FindRecipesDocument(recipeID int) *models.Recipes {
+	var test models.Recipes
+	test.ID = 33180
+	return &test
+}
+
+func (fake FakeCollections) FindPricesDocument(itemID int) *models.Prices {
+	var test models.Prices
+	test.ItemID = 24322
+
+	return &test
+}
+
+func (fake FakeCollections) FindProfitsDocument(recipeID int) *models.Profits {
+	var test models.Profits
+	test.RecipeID = 33180
+
+	return &test
+}
+
+func (fake FakeCollections) InsertRecipesDocument(recipeID int) *models.Recipes {
+	var test models.Recipes
+	// If a database doesn't have the ID, we can insert one.
+	// The real method will call the API.
+	test.ID = 33180
+	fmt.Println("Inserted Test Recipes")
+	return &test
+}
+
+func (fake FakeCollections) InsertPricesDocument(itemID int) *models.Prices {
+	var test models.Prices
+	test.ItemID = 24322
+	fmt.Println("Inserted Test Prices")
+	return &test
+}
 func (t *AppTest) Before() {
 	println("Set up")
 }
@@ -23,77 +67,27 @@ func (t *AppTest) TestThatIndexPageWorks() {
 	t.AssertContentType("text/html; charset=utf-8")
 }
 
-// Let's try to write a unit test for Ingredient Materials.
-// A unit test should test only one method.
-// A unit test should provide some specific arguments into that method.
-// A unit test tests the result that is as expected
-func (t *AppTest) TestIngredientMaterials() {
-	// What specific behavior are you testing?
-	// You should be careful of redundancies.
-	// One logical assertion per test.
-	// Test only one code unit at a time.
-	// No need to look inside the method to know what it's doing.
-	// Changing the internals should not cause the test to fail.
-
-	// You should not directly test that private methods are being called.
-	// If you do, then use a code coverage tool.
-
-	// If the method calls other public methods in other packages, and these calls
-	// are guaranteed by the interface, then you can test that these calls are made by a mocking framework
-	// What does this really mean?
-
-	// Do not use the method, or internal code, to generate the expected result dynamically.
-	// The expected result should be hard-coded into the test case.
-	// This is so that it doesn't change when implementation changes.
-
-	// Add more test cases, to see if you have missed any interesting paths.
-
-	// You don't need ot know HOW things are done, just that they correctly get stuff done.
-
-	// Test Driven - Thinking about writing tests and code at the same time.
-
-	// Summary : You want to test the final result, and see if the function behaves the way it does,
-	// Given that you've provided the correct inputs that you're going to provide.
-	// Unit tests are meant for also purposes that our code could fail.
-	// For example : We want to simulate some requests in the case that we would receive some error page.
-	// Like getting an error page when we're requesting some recipe ID 3900.
-	// We don't want to spam the API for these because we can expect a response.
-	// So unit testing allows us to simulate these bad responses.
-
-	// Test should not depend on ANY OUTSIDE RESOURCES (DATABASES, APIs, ETC.)
-	// If you need them, you should simulate them
-	// This is because you want to control what the return should be given a specific input.
-
-	// We need Inversion of Control.
-	// It inverts the control of some dependency of some function(client), and gives control, actually to the client.
-	// This means we create a method for the input.
-	// Like https://blog.drewolson.org/dependency-injection-in-go
-
+func (t *AppTest) Test_fails_if_BaseInformation_returns_nothing() {
+	var testfake FakeCollections
+	info := xivapi.BaseInformation(testfake, 33180)
+	testinfo := xivapi.Information{
+		Recipes: &models.Recipes{
+			ID: 33180,
+		},
+		Prices: &models.Prices{
+			ItemID: 24322,
+		},
+		Profits: &models.Profits{
+			RecipeID: 33180,
+		},
+	}
+	// For the test, we need to take the struct and put it into arrays.
+	expectedarray := [3]int{testinfo.Recipes.ID, testinfo.Prices.ItemID, testinfo.Profits.RecipeID}
+	// BaseInformation is broken if it doesn't fill this array with the right info.
+	resultarray := [3]int{info.Recipes.ID, info.Prices.ItemID, info.Profits.RecipeID}
+	t.AssertEqual(expectedarray, resultarray)
 }
 
 func (t *AppTest) After() {
 	println("Tear down")
 }
-
-/*
-A good test looks like this
-
-It tests some function, with a REALLY DESCRIPTIVE NAME
-def test_initial_score(self):
-// Then it provides some Mock dependency.
-  database = MockDatabase()
-  // We're basically using a filter here to find a user from the mock.
-  database.add_row({
-      'username': 'joe123',
-      'score': 150.0
-	})
-
-	// This is a helper function, which helps pull things from the database.
-	// Use these functions only to help boil down the code if needed, but not too much.
-  account_manager = AccountManager(database)
-
-  //
-  initial_score = account_manager.get_score(username='joe123')
-
-  self.assertEqual(150.0, initial_score)
-*/
