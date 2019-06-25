@@ -13,7 +13,7 @@ GET     /App/Hello     App.Hello
 
 # Example : POST from /Result/Index.html calls the Obtain function, which renders the Obtain page.
 GET     /Result                               Result.Index
-#GET     /Result/Profit                        Result.Profit 
+GET     /Result/Profit                        Result.Profit 
 #POST    /Result/Profit                        Result.UpdateProfits
 #POST    /Result/Obtain                        Result.UpdatePrices
 POST    /Result/Index                         Result.Obtain

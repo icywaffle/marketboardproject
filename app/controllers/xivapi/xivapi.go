@@ -10,6 +10,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Collections struct {
@@ -32,6 +33,7 @@ type CollectionHandler interface {
 	InsertRecipesDocument(recipeID int) *models.Recipes
 	InsertPricesDocument(itemID int) *models.Prices
 	InsertProfitsDocument(info *Information, recipeID int) *models.Profits
+	ProfitDescCursor() []*models.Profits
 }
 
 // When testing, you create a FAKE COLLECTIONS, with a FAKE METHOD!
@@ -219,6 +221,28 @@ func (coll Collections) findsum(info *Information, matprofitmaps *models.Matprof
 	return tiersum
 }
 
+// Gives a Descending Sorted List, of 20 items with the most profit from the DB. Close this Cursor when completed.
+func (coll Collections) ProfitDescCursor() []*models.Profits {
+	options := options.FindOptions{}
+	options.Sort = bson.D{{Key: "ProfitPercentage", Value: -1}}
+	// We can set this to be bigger later in the future
+	limit := int64(20)
+	options.Limit = &limit
+	cursor, _ := coll.Profits.Find(context.Background(), bson.D{}, &options)
+
+	var allprofits []*models.Profits
+	for cursor.Next(context.TODO()) {
+		var tempprofits models.Profits
+		cursor.Decode(&tempprofits)
+
+		allprofits = append(allprofits, &tempprofits)
+	}
+	defer cursor.Close(context.TODO())
+
+	return allprofits
+
+}
+
 // Fills out information about a crafted recipe.
 func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 	var info Information
@@ -229,4 +253,9 @@ func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 	info.Profits = collections.FindProfitsDocument(&info, recipeID)
 
 	return &info
+}
+
+func ProfitInformation(collections CollectionHandler) []*models.Profits {
+
+	return collections.ProfitDescCursor()
 }

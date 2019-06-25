@@ -28,6 +28,12 @@ func (c Result) Obtain() revel.Result {
 	return c.Render(baseinfo)
 }
 
+func (c Result) Profit() revel.Result {
+	profitpercentage := xivapi.ProfitInformation(DB)
+
+	return c.Render(profitpercentage)
+}
+
 /*
 // Allows user to either update recipes or prices on one page. Also allows a user to do both at the same time.
 func (c Result) UpdatePrices() revel.Result {
@@ -43,11 +49,7 @@ func (c Result) UpdatePrices() revel.Result {
 	return c.Redirect("/Result")
 }
 
-func (c Result) Profit() revel.Result {
-	profitpercentage := xivapi.CompareProfits()
 
-	return c.Render(profitpercentage)
-}
 
 func (c Result) UpdateProfits() revel.Result {
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
