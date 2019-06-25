@@ -45,12 +45,6 @@ Total List of prices and materials that you need for crafting.
 Save your searched items into the database so that you can compare which items may net you more profit
 A cost of time in how much materials to actually gather.
 
-## Code Example
-
-`xivapi.BaseInformation(collections,recipeID)`
-This fills out all the information that can be obtained by the database
-for a specific recipeID.
-
 ## Development Environment
 For current build,
 
