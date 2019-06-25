@@ -29,6 +29,8 @@ A No-SQL Database, since there are certain items that do not follow
 a strict Schema.
 - [Revel](https://revel.github.io/)
 A Full-Stack web framework to run the entire project.
+- [UIKit](https://getuikit.com/)
+A Front-End web framework that minimilistically styles the site.
 
 <b>Additional Dependencies</b>
 - [MongoDB-Go-Driver](https://github.com/mongodb/mongo-go-driver)
