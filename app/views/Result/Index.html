@@ -45,7 +45,8 @@
               <input class="uk-input" type="text" name="recipeID" placeholder="Recipe ID">
             </div>
 
-            <button class="uk-button uk-button-primary" type="submit">Search</button>
+            <button class="uk-button uk-button-primary" type="submit" uk-toggle="target: #searchspinner">Search</button>
+            <div uk-spinner hidden id="searchspinner"></div>
           </fieldset>
         </form>
 

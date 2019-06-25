@@ -124,7 +124,7 @@ func xivapiconnector(websiteurl string) []byte {
 	return byteValue
 }
 
-func Jsonitemrecipe(byteValue []byte) *models.Recipes {
+func Jsonitemrecipe(byteValue []byte) models.Recipes {
 
 	// Unmarshal the information into the structs
 	var recipes models.Recipes
@@ -201,7 +201,7 @@ func Jsonitemrecipe(byteValue []byte) *models.Recipes {
 	recipes.IngredientNames = matitemIDslice
 	recipes.IngredientAmounts = amountslice
 	recipes.IngredientRecipes = matrecipeIDslice
-	return &recipes
+	return recipes
 }
 
 func Jsonprices(byteValue []byte) models.Prices {

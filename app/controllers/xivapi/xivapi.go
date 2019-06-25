@@ -13,6 +13,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+//6/25/19 - 1PM : Added new info to the struct.
+var UpdatedStructTime = int64(1561493761)
+
 type Collections struct {
 	Prices  *mongo.Collection
 	Recipes *mongo.Collection
@@ -34,36 +37,31 @@ type CollectionHandler interface {
 	InsertPricesDocument(itemID int) *models.Prices
 	InsertProfitsDocument(info *Information, recipeID int) *models.Profits
 	FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps)
+}
+
+type ProfitHandler interface {
 	ProfitDescCursor() []*models.Profits
 }
 
-// When testing, you create a FAKE COLLECTIONS, with a FAKE METHOD!
-// When you create this FAKE METHOD, You actually return this models.Thing that you've made.
-// You test that!
-
-// In the test, build a Fake FindRecipesDocument
-// Build a Fake collections, where this FindRecipesDocument will handle it.
-// Then call the main Function BaseInformation(calls the fakemethod through an interface)
-
-// This method, must be called by the main function through an interface.
 func (coll Collections) FindRecipesDocument(recipeID int) *models.Recipes {
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Recipes
 	coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
 	// If the ID returns zero, then it's not in the database. We need to insert one.
-	if result.ID == 0 {
+	// Also, we need to force update when we update the struct with more info.
+	if result.ID == 0 || result.Added < UpdatedStructTime {
 		result = *coll.InsertRecipesDocument(recipeID)
 	}
-
 	return &result
 }
 func (coll Collections) FindPricesDocument(itemID int) *models.Prices {
 	filter := bson.M{"ItemID": itemID}
 	var result models.Prices
 	coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
-	if result.ItemID == 0 {
+	if result.ItemID == 0 || result.Added < UpdatedStructTime {
 		result = *coll.InsertPricesDocument(itemID)
 	}
+
 	return &result
 }
 
@@ -71,35 +69,65 @@ func (coll Collections) FindProfitsDocument(info *Information, recipeID int) *mo
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Profits
 	coll.Profits.FindOne(context.TODO(), filter).Decode(&result)
-	if result.RecipeID == 0 {
+	if result.RecipeID == 0 || result.Added < UpdatedStructTime {
 		result = *coll.InsertProfitsDocument(info, recipeID)
 	}
 	return &result
 }
 
+// Will insert a document, or update it if it's already in the collection.
 func (coll Collections) InsertRecipesDocument(recipeID int) *models.Recipes {
-	var result models.Recipes
 	byteValue := database.ApiConnect(recipeID, "recipe")
-	result = *database.Jsonitemrecipe(byteValue)
-	coll.Recipes.InsertOne(context.TODO(), result)
-	fmt.Println("Inserted Recipe into Database: ", result.ID)
+	result := database.Jsonitemrecipe(byteValue)
+	// These variables are not in the json file.
+	now := time.Now()
+	result.Added = now.Unix()
+	// Testing if there's an entry in the DB
+	var isinDB models.Recipes
+	filter := bson.M{"RecipeID": recipeID}
+	err := coll.Recipes.FindOne(context.TODO(), filter).Decode(&isinDB)
+	if err != nil {
+		coll.Recipes.InsertOne(context.TODO(), result)
+		fmt.Println("Inserted Recipe into Database: ", result.ID)
+	} else {
+		coll.Recipes.UpdateOne(context.TODO(), filter, bson.D{
+			{Key: "$set", Value: result},
+		})
+		fmt.Println("Updated Item into Recipe Collection :", result.ID)
+	}
+
 	return &result
 }
 
 func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
-	var result models.Prices
 	byteValue := database.ApiConnect(itemID, "market/item")
-	result = database.Jsonprices(byteValue)
-	// Item ID is not part of the json file.
+	result := database.Jsonprices(byteValue)
+	// ItemID is not part of the Json file.
 	result.ItemID = itemID
 	// If we do have an empty result, it means that we need to search for the vendor prices.
 	if result.ItemID != 0 && len(result.Sargatanas.Prices) == 0 {
 		byteValue = database.ApiConnect(result.ItemID, "item")
 		result = database.Jsonprices(byteValue)
+		// We have to rewrite the Item ID into this
+		result.ItemID = itemID
+	}
+	//These variables are not in the json file.
+	now := time.Now()
+	result.Added = now.Unix()
+
+	filter := bson.M{"ItemID": itemID}
+	var isinDB models.Prices
+	err := coll.Prices.FindOne(context.TODO(), filter).Decode(&isinDB)
+	if err != nil {
+		coll.Prices.InsertOne(context.TODO(), result)
+		fmt.Println("Inserted Prices into Database: ", result.ItemID)
+	} else {
+		coll.Prices.UpdateOne(context.TODO(), filter, bson.D{
+			{Key: "$set", Value: result},
+		})
+		fmt.Println("Updated Item into Prices Collection :", result.ItemID)
 	}
 
-	coll.Prices.InsertOne(context.TODO(), result)
-	fmt.Println("Inserted Prices into Database: ", result.ItemID)
 	return &result
 }
 
@@ -127,6 +155,19 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 	now := time.Now()
 	profits.Added = now.Unix()
 
+	filter := bson.M{"RecipeID": recipeID}
+
+	var isinDB models.Profits
+	err := coll.Profits.FindOne(context.TODO(), filter).Decode(&isinDB)
+	if err != nil {
+		coll.Profits.InsertOne(context.TODO(), profits)
+		fmt.Println("Inserted Profits into Database: ", profits.RecipeID)
+	} else {
+		coll.Profits.UpdateOne(context.TODO(), filter, bson.D{
+			{Key: "$set", Value: profits},
+		})
+		fmt.Println("Updated Item into Profit Collection :", profits.RecipeID)
+	}
 	return &profits
 
 }
@@ -259,7 +300,7 @@ func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 	return &info
 }
 
-func ProfitInformation(collections CollectionHandler) []*models.Profits {
+func ProfitInformation(profit ProfitHandler) []*models.Profits {
 
-	return collections.ProfitDescCursor()
+	return profit.ProfitDescCursor()
 }

@@ -26,6 +26,7 @@ type Recipes struct {
 	IngredientNames    []int   `bson:"IngredientName"`
 	IngredientAmounts  []int   `bson:"IngredientAmount"`
 	IngredientRecipes  [][]int `bson:"IngredientRecipes"`
+	Added              int64   `bson:"Added"`
 }
 
 type Prices struct {
@@ -47,7 +48,8 @@ type Prices struct {
 			Quantity     int  `json:"Quantity" bson:"Quantity"`
 		} `json:"Prices" bson:"Prices"`
 	} `json:"Sargatanas" bson:"Sargatanas"`
-	VendorPrice int `json:"PriceMid" bson:"VendorPrice"`
+	VendorPrice int   `json:"PriceMid" bson:"VendorPrice"`
+	Added       int64 `bson:"Added"`
 }
 
 // Lets also learn some dependency injections
