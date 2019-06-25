@@ -204,11 +204,11 @@ func Jsonitemrecipe(byteValue []byte) *models.Recipes {
 	return &recipes
 }
 
-func Jsonprices(byteValue []byte) *models.Prices {
+func Jsonprices(byteValue []byte) models.Prices {
 
 	var prices models.Prices
 	json.Unmarshal(byteValue, &prices)
 
-	return &prices
+	return prices
 
 }

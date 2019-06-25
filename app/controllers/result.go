@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"marketboardproject/app/controllers/xivapi"
 	"strconv"
 
@@ -24,7 +23,6 @@ func (c Result) Obtain() revel.Result {
 
 	baseinfo := xivapi.BaseInformation(DB, recipeID)
 
-	fmt.Println(baseinfo)
 	return c.Render(baseinfo)
 }
 

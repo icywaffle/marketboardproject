@@ -69,6 +69,8 @@ func (fake FakeCollections) InsertProfitsDocument(info *xivapi.Information, reci
 	profits.ItemID = info.Prices.ItemID
 	return &profits
 }
+func (fake FakeCollections) FillProfitMaps(info *xivapi.Information, matprofitmaps *models.Matprofitmaps) {
+}
 func (fake FakeCollections) ProfitDescCursor() []*models.Profits {
 	var fakearray []*models.Profits
 

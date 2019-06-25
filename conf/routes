@@ -6,17 +6,13 @@
 module:testrunner
 # module:jobs
 
-
-GET     /                                       App.Index
-GET     /App/Hello     App.Hello
-
-
+# When we access a page /, it grabs the functions as well.
 # Example : POST from /Result/Index.html calls the Obtain function, which renders the Obtain page.
-GET     /Result                               Result.Index
-GET     /Result/Profit                        Result.Profit 
+GET     /                               Result.Index
+GET     /Profit                        Result.Profit 
 #POST    /Result/Profit                        Result.UpdateProfits
 #POST    /Result/Obtain                        Result.UpdatePrices
-POST    /Result/Index                         Result.Obtain
+POST    /Result                         Result.Obtain
 
 # Ignore favicon requests
 GET     /favicon.ico                            404

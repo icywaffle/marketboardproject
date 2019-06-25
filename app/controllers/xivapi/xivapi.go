@@ -33,6 +33,7 @@ type CollectionHandler interface {
 	InsertRecipesDocument(recipeID int) *models.Recipes
 	InsertPricesDocument(itemID int) *models.Prices
 	InsertProfitsDocument(info *Information, recipeID int) *models.Profits
+	FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps)
 	ProfitDescCursor() []*models.Profits
 }
 
@@ -88,13 +89,15 @@ func (coll Collections) InsertRecipesDocument(recipeID int) *models.Recipes {
 func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
 	var result models.Prices
 	byteValue := database.ApiConnect(itemID, "market/item")
+	result = database.Jsonprices(byteValue)
+	// Item ID is not part of the json file.
+	result.ItemID = itemID
 	// If we do have an empty result, it means that we need to search for the vendor prices.
 	if result.ItemID != 0 && len(result.Sargatanas.Prices) == 0 {
 		byteValue = database.ApiConnect(result.ItemID, "item")
+		result = database.Jsonprices(byteValue)
 	}
-	result = *database.Jsonprices(byteValue)
-	// Item ID is not part of the json file.
-	result.ItemID = itemID
+
 	coll.Prices.InsertOne(context.TODO(), result)
 	fmt.Println("Inserted Prices into Database: ", result.ItemID)
 	return &result
@@ -115,14 +118,6 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 	}
 	profits.MarketboardPrice = itempriceperunit
 
-	// We need a main matprofitmaps
-	var matprofitmaps models.Matprofitmaps
-	matprofitmaps.Costs = make(map[int][10]int)
-	matprofitmaps.Ingredients = make(map[int][]int)
-	matprofitmaps.Total = make(map[int]int)
-	coll.fillprofitmaps(info, &matprofitmaps)
-	// We need to fill the information once we're done finding the matprofit maps.
-	info.Matprofitmaps = &matprofitmaps
 	materialcosts := coll.findsum(info, info.Matprofitmaps)
 	profits.MaterialCosts = materialcosts
 	// We may get multiple items per craft.
@@ -137,7 +132,8 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 }
 
 // This recursive function, calls through the materials of materials etc, and fills a map up.
-func (coll Collections) fillprofitmaps(info *Information, matprofitmaps *models.Matprofitmaps) {
+func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps) {
+
 	// Price array, will allow us to take the price of crafting a material,
 	// only if the material is craftable.
 	var pricearray [10]int
@@ -176,7 +172,7 @@ func (coll Collections) fillprofitmaps(info *Information, matprofitmaps *models.
 			var matinfo Information
 			matinfo.Recipes = coll.FindRecipesDocument(info.Recipes.IngredientRecipes[i][0])
 			// We can then use this new material information, to fill the maps some more.
-			coll.fillprofitmaps(&matinfo, matprofitmaps)
+			coll.FillProfitMaps(&matinfo, matprofitmaps)
 		}
 	}
 
@@ -189,6 +185,7 @@ func (coll Collections) fillprofitmaps(info *Information, matprofitmaps *models.
 		}
 		matprofitmaps.Total[itemID] = pricesum
 	}
+
 }
 func (coll Collections) findsum(info *Information, matprofitmaps *models.Matprofitmaps) int {
 
@@ -248,6 +245,14 @@ func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 	info.Recipes = collections.FindRecipesDocument(recipeID)
 
 	info.Prices = collections.FindPricesDocument(info.Recipes.ItemResultTargetID)
+
+	// We need to initialize our maps
+	var matprofitmaps models.Matprofitmaps
+	matprofitmaps.Costs = make(map[int][10]int)
+	matprofitmaps.Ingredients = make(map[int][]int)
+	matprofitmaps.Total = make(map[int]int)
+	collections.FillProfitMaps(&info, &matprofitmaps)
+	info.Matprofitmaps = &matprofitmaps
 
 	info.Profits = collections.FindProfitsDocument(&info, recipeID)
 

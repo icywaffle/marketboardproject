@@ -8,15 +8,15 @@
         <ul class="uk-navbar-nav">
             <li><a href="/">Home</a></li>
             <li class="uk-active">
-                <a href="/Result/Index">Recipes</a>
+                <a href="#">Recipes</a>
                 <div class="uk-navbar-dropdown">
                     <ul class="uk-nav uk-navbar-dropdown-nav">
-                        <li><a href="/Result/">Search</a></li>
+                        <li><a href="#">Search</a></li>
                         <li class="uk-active">{{.baseinfo.Profits.RecipeID}}</li>
                     </ul>
                 </div>
             </li>
-            <li><a href="/Result/Profit">Profits</a></li>
+            <li><a href="/Profit">Profits</a></li>
         </ul>
 
     </div>
@@ -38,7 +38,32 @@
             </ul>
         </div>
     </div>
+    <div class="uk-section uk-section-muted">
+        <div class="uk-container">
 
+            <h3>Section Muted</h3>
+
+            <div class="uk-grid-match uk-child-width-1-3@m" uk-grid>
+                <ul class="uk-list" id="materiallist">
+                    {{range $itemID,$itemarray := .baseinfo.Matprofitmaps.Ingredients}}
+                    <li>Item ID: {{$itemID}} Sum Cost:
+                        {{index $.baseinfo.Matprofitmaps.Total $itemID}}
+                    </li>
+                    <ul>
+                        {{range $index, $matid := $itemarray}}
+                        {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
+                        <li value="{{$matid}}">
+                            Material: {{$matid}} Cost: {{index $pricearray $index}}
+                        </li>
+                        {{end}}
+                    </ul>
+                    {{end}}
+                </ul>
+            </div>
+            <!-- Removes the Empty Material information -->
+            <script>$("#materiallist li[value='0']").remove();</script>
+        </div>
+    </div>
 </section>
 
 {{template "footer.html" .}}
