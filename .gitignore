@@ -3,3 +3,6 @@ tmp/
 routes/
 /keys/keys.go
 /conf/app.conf
+/public/img/icon/
+/public/css/uikit/
+/public/js/uikit/
