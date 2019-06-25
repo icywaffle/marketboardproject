@@ -49,16 +49,18 @@ A cost of time in how much materials to actually gather.
 This fills out all the information that can be obtained by the database
 for a specific recipeID.
 
-## Installation
+## Development Environment
 For current build,
 
-Install MongoDB, and create a server that uses the default port 27017.
+Create a MongoDB server.
+
 Uncomment and paste your Mongo Connection link in `keys/samplekeys.go`
 
-Create an XIVAPI account and obtain your own private key, and also
-uncomment and past your private key in `keys/samplekeys.go`
+Create an XIVAPI account and obtain your own private key.
 
-Next, install the MongoDB-Go-Driver, since it's one of the dependencies for the code.
+Uncomment and past your private key in `keys/samplekeys.go`
+
+Install the MongoDB-Go-Driver, since it's one of the dependencies for the code.
 
 Next, install Revel and create a Revel app in your GOPATH, for example
 `revel new marketboardproject`
@@ -68,7 +70,7 @@ This allows you to have a "skeleton" app. Then you may be able to copy this proj
 Then you just run using the command
 `revel run -a marketboardproject`
 
-and finally connect to the localhost:9000.
+and finally connect to localhost:9000.
 
 ## Testing
 
