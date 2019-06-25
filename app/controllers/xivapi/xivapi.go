@@ -123,11 +123,10 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 	coll.fillprofitmaps(info, &matprofitmaps)
 	// We need to fill the information once we're done finding the matprofit maps.
 	info.Matprofitmaps = &matprofitmaps
-	// Then we can find out the smaller material costs.
 	materialcosts := coll.findsum(info, info.Matprofitmaps)
 	profits.MaterialCosts = materialcosts
-
-	profits.Profits = itempriceperunit - materialcosts
+	// We may get multiple items per craft.
+	profits.Profits = itempriceperunit*info.Recipes.AmountResult - materialcosts
 	profits.ProfitPercentage = (float32(itempriceperunit) - float32(materialcosts)) / float32(materialcosts) * 100
 
 	now := time.Now()

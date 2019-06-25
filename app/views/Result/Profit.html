@@ -1,39 +1,42 @@
 {{set . "title" "Profit"}}
 {{template "header.html" .}}
 
-<header class="jumbotron" style="background-color:#A9F16C">
-    <div class="container">
-        <div class="row">
-            <a href="../">
-                <h1>It works!</h1>
-            </a>
+<nav class="uk-navbar-container" uk-navbar>
+    <div class="uk-navbar-left">
 
+        <ul class="uk-navbar-nav">
+            <li><a href="/">Home</a></li>
+            <li>
+                <a href="/Result/">Recipes</a>
+                <div class="uk-navbar-dropdown">
+                    <ul class="uk-nav uk-navbar-dropdown-nav">
+                        <li><a href="/Result/">Search</a></li>
+                    </ul>
+                </div>
+            </li>
+            <li class="uk-active"><a href="/Result/Profit">Profits</a></li>
+        </ul>
+
+    </div>
+</nav>
+
+<section>
+    <div class="uk-section uk-section-default">
+        <div class="uk-container">
+            <h2>Recipes with Most Profit Percentage</h2>
+            <ul class="uk-list uk-list-striped">
+                {{range $i,$profitarray := .profitpercentage}}
+                <li>Recipe ID: <strong>{{$profitarray.RecipeID}}</strong>
+                    <ul>
+                        <li>Profit: <strong>{{$profitarray.ProfitPercentage}}%</strong></li>
+                        <li>Item: {{(index $.profitpercentage $i).ItemID}}</li>
+                    </ul>
+
+                </li>
+                {{end}}
+            </ul>
         </div>
     </div>
-</header>
-<div class="container">
-    <form action="/Result/Profit" method="post">
-        <div class="form-group">
-            <div class="row">
-                <label for="todo" class="col-xs-2">Force Update Profits by typing in RecipeID</label>
-                <input type="number" name="recipeID" class="col-xs-8">
-                <div class="col-xs-2">
-                    <button type="submit" class="btn btn-success">
-                        <i class="fa fa-plus"></i> Update
-                    </button>
-                </div>
-            </div>
-        </div>
-    </form>
-</div>
-<section>
-    <h2>Recipes with Most Profit Percentage</h2>
-    <ol>
-        {{range $i,$profitarray := .profitpercentage}}
-        <li>Using Recipe ID: <strong>{{$profitarray.RecipeID}}</strong> {{$profitarray.ProfitPercentage}}%
-            Item: {{(index $.profitpercentage $i).ItemID}}</li>
-        {{end}}
-    </ol>
 </section>
 
 <div class="container">

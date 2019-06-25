@@ -2,28 +2,42 @@
 {{template "header.html" .}}
 
 
-<header class="jumbotron" style="background-color:#A9F16C">
-    <div class="container">
-        <div class="row">
-            <h1>profits</h1>
-            <a href="../">
-                <p>Home Page</p>
-            </a>
-        </div>
+<nav class="uk-navbar-container" uk-navbar>
+    <div class="uk-navbar-left">
+
+        <ul class="uk-navbar-nav">
+            <li><a href="/">Home</a></li>
+            <li class="uk-active">
+                <a href="/Result/Index">Recipes</a>
+                <div class="uk-navbar-dropdown">
+                    <ul class="uk-nav uk-navbar-dropdown-nav">
+                        <li><a href="/Result/">Search</a></li>
+                        <li class="uk-active">{{.baseinfo.Profits.RecipeID}}</li>
+                    </ul>
+                </div>
+            </li>
+            <li><a href="/Result/Profit">Profits</a></li>
+        </ul>
+
     </div>
-</header>
+</nav>
 
 <section>
-    <h2>Analysis</h2>
-    <ul>
-        <li>ItemID: {{.baseinfo.Profits.ItemID}}</li>
-        <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
-        <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
-        <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
-        <li>Material Costs: {{.baseinfo.Profits.MaterialCosts}}</li>
-        <li>Profit: {{.baseinfo.Profits.Profits}}</li>
-        <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}</li>
-    </ul>
+    <div class="uk-section">
+        <div class="uk-container">
+
+            <h2>Analysis</h2>
+            <ul class="uk-list">
+                <li>ItemID: {{.baseinfo.Profits.ItemID}}</li>
+                <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
+                <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
+                <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
+                <li>Material Costs: {{.baseinfo.Profits.MaterialCosts}}</li>
+                <li>Profit: {{.baseinfo.Profits.Profits}}</li>
+                <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}</li>
+            </ul>
+        </div>
+    </div>
 
 </section>
 
