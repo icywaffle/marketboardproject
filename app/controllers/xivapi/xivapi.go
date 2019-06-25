@@ -150,7 +150,7 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 	profits.MaterialCosts = materialcosts
 	// We may get multiple items per craft.
 	profits.Profits = itempriceperunit*info.Recipes.AmountResult - materialcosts
-	profits.ProfitPercentage = (float32(itempriceperunit) - float32(materialcosts)) / float32(materialcosts) * 100
+	profits.ProfitPercentage = (float32(profits.Profits)) / float32(materialcosts) * 100
 
 	now := time.Now()
 	profits.Added = now.Unix()
