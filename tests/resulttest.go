@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"fmt"
 	"marketboardproject/app/controllers"
 	"marketboardproject/app/controllers/xivapi"
 	"marketboardproject/app/models"
@@ -73,7 +72,13 @@ func (fake FakeCollections) InsertProfitsDocument(info *xivapi.Information, reci
 func (fake FakeCollections) ProfitDescCursor() []*models.Profits {
 	var fakearray []*models.Profits
 
-	fakearray[0].RecipeID = 33180
+	// Mocks getting a cursor from the database, and appending it to a full array of information.
+	var tempprofits models.Profits
+	tempprofits.RecipeID = 33180
+	var tempprofits2 models.Profits
+	tempprofits2.RecipeID = 33181
+	fakearray = append(fakearray, &tempprofits)
+	fakearray = append(fakearray, &tempprofits2)
 
 	return fakearray
 }
@@ -85,7 +90,6 @@ func (t *ResultTest) Before() {
 func (t *ResultTest) Test_fails_if_BaseInformation_returns_nothing() {
 	var testfake FakeCollections
 	info := xivapi.BaseInformation(testfake, 33180)
-	fmt.Println(info)
 	testinfo := xivapi.Information{
 		Recipes: &models.Recipes{
 			ID: 33180,
@@ -101,6 +105,15 @@ func (t *ResultTest) Test_fails_if_BaseInformation_returns_nothing() {
 	expectedarray := [3]int{testinfo.Recipes.ID, testinfo.Prices.ItemID, testinfo.Profits.RecipeID}
 	// BaseInformation is broken if it doesn't fill this array with the right info.
 	resultarray := [3]int{info.Recipes.ID, info.Prices.ItemID, info.Profits.RecipeID}
+	t.AssertEqual(expectedarray, resultarray)
+}
+
+// Unit test for ProfitInformation
+func (t *ResultTest) Test_fails_if_ProfitInformation_returns_nothing() {
+	var fakecollection FakeCollections
+	resultarray := xivapi.ProfitInformation(fakecollection)
+	expectedarray := []*models.Profits{{RecipeID: 33180}, {RecipeID: 33181}}
+
 	t.AssertEqual(expectedarray, resultarray)
 }
 

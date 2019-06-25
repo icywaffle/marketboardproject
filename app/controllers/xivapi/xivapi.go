@@ -221,7 +221,7 @@ func (coll Collections) findsum(info *Information, matprofitmaps *models.Matprof
 	return tiersum
 }
 
-// Gives a Descending Sorted List, of 20 items with the most profit from the DB. Close this Cursor when completed.
+// Gives a Descending Sorted Array, of 20 items with the most profit from the DB
 func (coll Collections) ProfitDescCursor() []*models.Profits {
 	options := options.FindOptions{}
 	options.Sort = bson.D{{Key: "ProfitPercentage", Value: -1}}
