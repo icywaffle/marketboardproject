@@ -35,6 +35,8 @@ A Front-End web framework that minimilistically styles the site.
 <b>Additional Dependencies</b>
 - [MongoDB-Go-Driver](https://github.com/mongodb/mongo-go-driver)
 A MongoDB Driver that allows an easier way to access the mongodb.
+- [SaintCoinach](https://github.com/ufx/SaintCoinach)
+Extracts game assets from Final Fantasy XIV, i.e. Item Icons.
 
 ## Current Features
 Profits / Costs of Items you want to craft.
@@ -62,6 +64,10 @@ Next, install Revel and create a Revel app in your GOPATH, for example
 `revel new marketboardproject`
 
 This allows you to have a "skeleton" app. Then you may be able to copy this project and overwrite over this skeleton, in `$GOPATH/src/marketboardproject.`
+
+Next, to display the site properly, you must add the UIkit dependencies inside `/public/css/UIkit` and `/public/js/UIkit`.
+
+Also, you need to use SaintCoinach to be able to render icons correctly. Run SaintCoinach.Cmd.exe and type ui, and wait until it mines the icon data. You put the folders from 020000-065000 that it creates, into `/public/img/icon/`.
 
 Then you just run using the command
 `revel run -a marketboardproject`
