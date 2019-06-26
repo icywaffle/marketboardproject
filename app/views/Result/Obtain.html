@@ -2,57 +2,55 @@
 {{template "header.html" .}}
 
 
-<nav class="uk-navbar-container" uk-navbar>
+<nav class="uk-navbar uk-navbar-container">
     <div class="uk-navbar-left">
+        <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
+            <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
+        </a>
+    </div>
+</nav>
 
-        <ul class="uk-navbar-nav">
-            <li><a href="/">Home</a></li>
-            <li class="uk-active">
-                <a href="#">Recipes</a>
-                <div class="uk-navbar-dropdown">
-                    <ul class="uk-nav uk-navbar-dropdown-nav">
-                        <li><a href="#">Search</a></li>
-                        <li class="uk-active">{{.baseinfo.Profits.RecipeID}}</li>
-                    </ul>
-                </div>
-            </li>
+<div id="offcanvas-slide" uk-offcanvas>
+    <div class="uk-offcanvas-bar">
+
+        <ul class="uk-nav uk-nav-default">
+            <li class="uk-active"><a href="/">Home</a></li>
             <li><a href="/Profit">Profits</a></li>
         </ul>
 
     </div>
-</nav>
+</div>
 
 <section>
-    <div class="uk-section">
+    <div class="uk-section uk-background-secondary uk-light">
         <div class="uk-container">
-
-            <h2>Analysis</h2>
-            <ul class="uk-list">
-                <li>
-                    <img class="itemicon" src="{{.baseinfo.Recipes.IconID}}" uk-img>
-                    ItemID: {{.baseinfo.Profits.ItemID}}
-                </li>
-                <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
-                <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
-                <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
-                <li>Material Costs: {{.baseinfo.Profits.MaterialCosts}}</li>
-                <li>Profit: {{.baseinfo.Profits.Profits}}</li>
-                <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}</li>
-            </ul>
+            <div class="uk-width-4-5 uk-float-right">
+                <h2>Analysis</h2>
+                <ul class="uk-list">
+                    <li>
+                        <img class="itemicon" src="{{.baseinfo.Recipes.IconID}}" uk-img>
+                        ItemID: {{.baseinfo.Profits.ItemID}}
+                    </li>
+                    <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
+                    <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
+                    <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
+                    <li>Material Costs: {{.baseinfo.Profits.MaterialCosts}}</li>
+                    <li>Profit: {{.baseinfo.Profits.Profits}}</li>
+                    <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}</li>
+                </ul>
+            </div>
         </div>
     </div>
     <div class=" uk-section uk-section-muted">
         <div class="uk-container">
-
-            <h3>Materials</h3>
-
-            <div class="uk-grid-match uk-child-width-1-3@m" uk-grid>
+            <div class="uk-width-4-5 uk-float-right">
+                <h3>Materials</h3>
                 <ul class="uk-list" id="materiallist">
                     {{range $itemID,$itemarray := .baseinfo.Matprofitmaps.Ingredients}}
                     <li>Item ID: {{$itemID}} Sum Cost:
                         {{index $.baseinfo.Matprofitmaps.Total $itemID}}
                     </li>
-                    <ul>
+                    <ul class="uk-list">
                         {{range $index, $matid := $itemarray}}
                         {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
                         <li value="{{$matid}}">

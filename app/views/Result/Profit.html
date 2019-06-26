@@ -1,30 +1,31 @@
 {{set . "title" "Profit"}}
 {{template "header.html" .}}
 
-<nav class="uk-navbar-container" uk-navbar>
+<nav class="uk-navbar uk-navbar-container">
     <div class="uk-navbar-left">
+        <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
+            <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
+        </a>
+    </div>
+</nav>
 
-        <ul class="uk-navbar-nav">
+<div id="offcanvas-slide" uk-offcanvas>
+    <div class="uk-offcanvas-bar">
+
+        <ul class="uk-nav uk-nav-default">
             <li><a href="/">Home</a></li>
-            <li>
-                <a href="#">Recipes</a>
-                <div class="uk-navbar-dropdown">
-                    <ul class="uk-nav uk-navbar-dropdown-nav">
-                        <li><a href="#">Search</a></li>
-                    </ul>
-                </div>
-            </li>
             <li class="uk-active"><a href="/Profit">Profits</a></li>
         </ul>
 
     </div>
-</nav>
+</div>
+
 
 <section>
-    <div class="uk-section uk-section-default">
-        <div class="uk-container">
+    <div class="uk-section uk-section-default uk-background-secondary uk-light">
+        <div class="uk-container uk-width-3-4 uk-float-right">
             <h2>Recipes with Most Profit Percentage</h2>
-            <ul class="uk-list uk-list-striped">
+            <ul class="uk-list uk-list-divider uk-width-1-2">
                 {{range $i,$profitarray := .profitpercentage}}
                 <li>Recipe ID: <strong>{{$profitarray.RecipeID}}</strong>
                     <ul>

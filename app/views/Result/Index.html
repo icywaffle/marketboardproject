@@ -1,24 +1,26 @@
 {{set . "title" "Results"}}
 {{template "header.html" .}}
 
-<nav class="uk-navbar-container" uk-navbar>
+<nav class="uk-navbar uk-navbar-container">
   <div class="uk-navbar-left">
+    <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
+      <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
+    </a>
+  </div>
+</nav>
 
-    <ul class="uk-navbar-nav">
+<div id="offcanvas-slide" uk-offcanvas>
+  <div class="uk-offcanvas-bar">
+
+    <ul class="uk-nav uk-nav-default">
       <li class="uk-active"><a href="/">Home</a></li>
-      <li>
-        <a href="#">Recipes</a>
-        <div class="uk-navbar-dropdown">
-          <ul class="uk-nav uk-navbar-dropdown-nav">
-            <li><a href="#">Search</a></li>
-          </ul>
-        </div>
-      </li>
       <li><a href="/Profit">Profits</a></li>
     </ul>
 
   </div>
-</nav>
+</div>
+
+
 
 <div class="container">
   <div class="row">
@@ -29,10 +31,10 @@
 </div>
 
 <section>
-  <div class="uk-section uk-section-primary uk-light">
-    <div class="uk-container">
+  <div class="uk-section uk-background-secondary uk-light">
+    <div class="uk-container" uk-height-viewport="expand: true">
 
-      <div class="uk-grid-match uk-child-width-1-3@m" uk-grid>
+      <div class="uk-grid-match uk-width-5-6 uk-float-right" uk-grid>
 
 
         <!-- This allows us to receive the RecipeID for our Functions -->
@@ -55,24 +57,6 @@
     </div>
   </div>
 </section>
-<a href="#offcanvas-slide" class="uk-button uk-button-default" uk-toggle>Open</a>
-
-<div id="offcanvas-slide" uk-offcanvas>
-  <div class="uk-offcanvas-bar">
-
-    <ul class="uk-nav uk-nav-default">
-      <li class="uk-active"><a href="/">Home</a></li>
-      <li><a href="/Profit">Profits</a></li>
-      <li class="uk-nav-header">Header</li>
-      <li><a href="#">Item</a></li>
-      <li><a href="#">Item</a></li>
-      <li class="uk-nav-divider"></li>
-      <li><a href="#">Item</a></li>
-    </ul>
-
-  </div>
-</div>
-
 
 
 
