@@ -70,7 +70,10 @@ func (fake FakeCollections) InsertProfitsDocument(info *xivapi.Information, reci
 	return &profits
 }
 func (fake FakeCollections) FillProfitMaps(info *xivapi.Information, matprofitmaps *models.Matprofitmaps) {
+	// This mocks the recalls to the collections, and inserting it into the maps.
+	matprofitmaps.Costs[24322] = [10]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 }
+
 func (fake FakeCollections) ProfitDescCursor() []*models.Profits {
 	var fakearray []*models.Profits
 
@@ -92,6 +95,7 @@ func (t *ResultTest) Before() {
 func (t *ResultTest) Test_fails_if_BaseInformation_returns_nothing() {
 	var testfake FakeCollections
 	info := xivapi.BaseInformation(testfake, 33180)
+
 	testinfo := xivapi.Information{
 		Recipes: &models.Recipes{
 			ID: 33180,
@@ -108,6 +112,20 @@ func (t *ResultTest) Test_fails_if_BaseInformation_returns_nothing() {
 	// BaseInformation is broken if it doesn't fill this array with the right info.
 	resultarray := [3]int{info.Recipes.ID, info.Prices.ItemID, info.Profits.RecipeID}
 	t.AssertEqual(expectedarray, resultarray)
+}
+
+func (t *ResultTest) Test_fails_if_BaseInformation_maps_are_nil() {
+	var testfake FakeCollections
+	info := xivapi.BaseInformation(testfake, 33180)
+	testmap := make(map[int][10]int)
+	testmap[24322] = [10]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	testinfo := xivapi.Information{
+		Matprofitmaps: &models.Matprofitmaps{
+			Costs: testmap,
+		},
+	}
+
+	t.AssertEqual(testinfo.Matprofitmaps.Costs, info.Matprofitmaps.Costs)
 }
 
 // Unit test for ProfitInformation
