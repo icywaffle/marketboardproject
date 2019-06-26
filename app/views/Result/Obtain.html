@@ -22,10 +22,11 @@
 </div>
 
 <section>
-    <div class="uk-section uk-background-secondary uk-light">
+    <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
                 <h2>Analysis</h2>
+                <h4>{{.baseinfo.Recipes.Name}}</h4>
                 <ul class="uk-list">
                     <li>
                         <img class="itemicon" src="{{.baseinfo.Recipes.IconID}}" uk-img>
@@ -41,21 +42,37 @@
             </div>
         </div>
     </div>
-    <div class=" uk-section uk-section-muted">
+    <div class=" uk-section uk-section-muted uk-animation-slide-left">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
                 <h3>Materials</h3>
-                <ul class="uk-list" id="materiallist">
-                    {{range $itemID,$itemarray := .baseinfo.Matprofitmaps.Ingredients}}
-                    <li>Item ID: {{$itemID}} Sum Cost:
-                        {{index $.baseinfo.Matprofitmaps.Total $itemID}}
+                <ul class="uk-list" id="mainrecipelist">
+                    {{range $itemindex, $itemID := .baseinfo.Recipes.IngredientID}}
+                    {{$itemarray := index $.baseinfo.Matprofitmaps.Ingredients $itemID}}
+                    <li value="{{$itemID}}">
+                        <h4>{{index $.baseinfo.Recipes.IngredientNames $itemindex}}</h4>
+                        <ul class="uk-list">
+                            <li>Sum Cost: {{index $.baseinfo.Matprofitmaps.Total $itemID}}</li>
+                            <li><img class="itemicon" src="{{index $.baseinfo.Recipes.IngredientIconID $itemindex}}"
+                                    uk-img>Item ID: {{$itemID}}</li>
+                        </ul>
                     </li>
-                    <ul class="uk-list">
+                    <ul class="uk-list" id="materiallist">
                         {{range $index, $matid := $itemarray}}
                         {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
+                        {{$namearray := index $.baseinfo.Matprofitmaps.Names $itemID}}
+                        {{$iconarray := index $.baseinfo.Matprofitmaps.IconID $itemID}}
                         <li value="{{$matid}}">
-                            Material: {{$matid}} Cost: {{index $pricearray $index}}
+                            <h5>{{index $namearray $index}}</h5>
+                            <ul class="uk-list">
+                                <li>Cost: {{index $pricearray $index}}</li>
+                                <li>
+                                    <img class="itemicon" src="{{index $iconarray $index}}" uk-img>
+                                    Item ID: {{$matid}}
+                                </li>
+                            </ul>
                         </li>
+
                         {{end}}
                     </ul>
                     {{end}}

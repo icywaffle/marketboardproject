@@ -31,16 +31,56 @@ type AmountIngredient struct {
 }
 
 type ItemIngredient struct {
-	ItemIngredient0TargetID int `json:"ItemIngredient0TargetID"`
-	ItemIngredient1TargetID int `json:"ItemIngredient1TargetID"`
-	ItemIngredient2TargetID int `json:"ItemIngredient2TargetID"`
-	ItemIngredient3TargetID int `json:"ItemIngredient3TargetID"`
-	ItemIngredient4TargetID int `json:"ItemIngredient4TargetID"`
-	ItemIngredient5TargetID int `json:"ItemIngredient5TargetID"`
-	ItemIngredient6TargetID int `json:"ItemIngredient6TargetID"`
-	ItemIngredient7TargetID int `json:"ItemIngredient7TargetID"`
-	ItemIngredient8TargetID int `json:"ItemIngredient8TargetID"`
-	ItemIngredient9TargetID int `json:"ItemIngredient9TargetID"`
+	ItemIngredient0 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient0"`
+	ItemIngredient1 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient1"`
+	ItemIngredient2 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient2"`
+	ItemIngredient3 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient3"`
+	ItemIngredient4 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient4"`
+	ItemIngredient5 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconD"`
+	} `json:"ItemIngredient5"`
+	ItemIngredient6 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient6"`
+	ItemIngredient7 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient7"`
+	ItemIngredient8 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient8"`
+	ItemIngredient9 struct {
+		Name   string `json:"Name"`
+		ID     int    `json:"ID"`
+		IconID int    `json:"IconID"`
+	} `json:"ItemIngredient9"`
 }
 
 type IngredientRecipe struct {
@@ -148,16 +188,38 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 		amount.AmountIngredient8,
 		amount.AmountIngredient9}
 
-	matitemIDslice := []int{matitemID.ItemIngredient0TargetID,
-		matitemID.ItemIngredient1TargetID,
-		matitemID.ItemIngredient2TargetID,
-		matitemID.ItemIngredient3TargetID,
-		matitemID.ItemIngredient4TargetID,
-		matitemID.ItemIngredient5TargetID,
-		matitemID.ItemIngredient6TargetID,
-		matitemID.ItemIngredient7TargetID,
-		matitemID.ItemIngredient8TargetID,
-		matitemID.ItemIngredient9TargetID}
+	matitemnameslice := []string{matitemID.ItemIngredient0.Name,
+		matitemID.ItemIngredient1.Name,
+		matitemID.ItemIngredient2.Name,
+		matitemID.ItemIngredient3.Name,
+		matitemID.ItemIngredient4.Name,
+		matitemID.ItemIngredient5.Name,
+		matitemID.ItemIngredient6.Name,
+		matitemID.ItemIngredient7.Name,
+		matitemID.ItemIngredient8.Name,
+		matitemID.ItemIngredient9.Name}
+
+	matitemIDslice := []int{matitemID.ItemIngredient0.ID,
+		matitemID.ItemIngredient1.ID,
+		matitemID.ItemIngredient2.ID,
+		matitemID.ItemIngredient3.ID,
+		matitemID.ItemIngredient4.ID,
+		matitemID.ItemIngredient5.ID,
+		matitemID.ItemIngredient6.ID,
+		matitemID.ItemIngredient7.ID,
+		matitemID.ItemIngredient8.ID,
+		matitemID.ItemIngredient9.ID}
+
+	matitemiconslice := []int{matitemID.ItemIngredient0.IconID,
+		matitemID.ItemIngredient1.IconID,
+		matitemID.ItemIngredient2.IconID,
+		matitemID.ItemIngredient3.IconID,
+		matitemID.ItemIngredient4.IconID,
+		matitemID.ItemIngredient5.IconID,
+		matitemID.ItemIngredient6.IconID,
+		matitemID.ItemIngredient7.IconID,
+		matitemID.ItemIngredient8.IconID,
+		matitemID.ItemIngredient9.IconID}
 
 	// We need to go through every single possible recipe that can make this item.
 	var matrecipeID IngredientRecipe
@@ -198,7 +260,9 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 	}
 
 	// These are custom things that we can add to the Recipes documents
-	recipes.IngredientNames = matitemIDslice
+	recipes.IngredientNames = matitemnameslice
+	recipes.IngredientID = matitemIDslice
+	recipes.IngredientIconID = matitemiconslice
 	recipes.IngredientAmounts = amountslice
 	recipes.IngredientRecipes = matrecipeIDslice
 	return recipes

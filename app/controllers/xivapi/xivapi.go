@@ -13,9 +13,8 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-//6/25/19 - 1PM : Added new info to the struct.
 // We want to separate the times, just in case we only update one struct.
-var UpdatedRecipesStructTime = int64(1561513719)
+var UpdatedRecipesStructTime = int64(1561573454) // Last Update : 6/26/19 - 11AM
 var UpdatedPricesStructTime = int64(1561493761)
 var UpdatedProfitsStructTime = int64(1561493761)
 
@@ -182,11 +181,11 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 	// only if the material is craftable.
 	var pricearray [10]int
 	// We need to search through the base materials
-	for i := 0; i < len(info.Recipes.IngredientNames); i++ {
+	for i := 0; i < len(info.Recipes.IngredientID); i++ {
 		// Zero is an invalid material ID
-		if info.Recipes.IngredientNames[i] != 0 {
+		if info.Recipes.IngredientID[i] != 0 {
 			var matpriceinfo models.Prices
-			matpriceinfo = *coll.FindPricesDocument(info.Recipes.IngredientNames[i])
+			matpriceinfo = *coll.FindPricesDocument(info.Recipes.IngredientID[i])
 			// We need to also deal with vendor prices, since they won't have market prices.
 			if matpriceinfo.VendorPrice != 0 {
 				pricearray[i] = matpriceinfo.VendorPrice * info.Recipes.IngredientAmounts[i]
@@ -203,9 +202,12 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 			// Zero should be skipped, since it's not a valid item.
 			continue
 		}
-		// After receiving the price information for specific materials, we fill the maps here.
+		// We recursively fill the maps with a certain ItemID, with certain information.
+		// This allows us to collectively have all the inner ingredients of an item.
 		matprofitmaps.Costs[info.Recipes.ItemResultTargetID] = pricearray
-		matprofitmaps.Ingredients[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientNames
+		matprofitmaps.Ingredients[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientID
+		matprofitmaps.Names[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientNames
+		matprofitmaps.IconID[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientIconID
 	}
 
 	// If there's a recipe for a material, we want to go in one more materialprices, and keep appending to it.
@@ -237,17 +239,17 @@ func (coll Collections) findsum(info *Information, matprofitmaps *models.Matprof
 
 	// Some materials are base items, so these base items won't have a map key for prices.
 	temppricearray := matprofitmaps.Costs[info.Recipes.ItemResultTargetID]
-	for i := 0; i < len(info.Recipes.IngredientNames); i++ {
-		materialtotalprice, ok := matprofitmaps.Total[info.Recipes.IngredientNames[i]]
+	for i := 0; i < len(info.Recipes.IngredientID); i++ {
+		materialtotalprice, ok := matprofitmaps.Total[info.Recipes.IngredientID[i]]
 		if ok {
 			// If a material also has a recipe, then we want to recursively call for it's material prices.
-			_, innerrecipe := matprofitmaps.Ingredients[info.Recipes.IngredientNames[i]]
+			_, innerrecipe := matprofitmaps.Ingredients[info.Recipes.IngredientID[i]]
 			if innerrecipe {
 				var materialinfo Information
 				// We're going to need to find the information about the inner materials.
 				// For now, we will deal with just the first recipe.
 				materialinfo.Recipes = coll.FindRecipesDocument(info.Recipes.IngredientRecipes[i][0])
-				materialinfo.Prices = coll.FindPricesDocument(info.Recipes.IngredientNames[i])
+				materialinfo.Prices = coll.FindPricesDocument(info.Recipes.IngredientID[i])
 				// We we need to redefine the materialtotalprice with the one that is found by looking at the prices of the materials within the materials.
 				// We also need to pass the main maps, to fill it up.
 				materialtotalprice = coll.findsum(&materialinfo, matprofitmaps)
@@ -295,6 +297,8 @@ func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 	matprofitmaps.Costs = make(map[int][10]int)
 	matprofitmaps.Ingredients = make(map[int][]int)
 	matprofitmaps.Total = make(map[int]int)
+	matprofitmaps.Names = make(map[int][]string)
+	matprofitmaps.IconID = make(map[int][]int)
 	collections.FillProfitMaps(&info, &matprofitmaps)
 	info.Matprofitmaps = &matprofitmaps
 

@@ -11,24 +11,27 @@ type Profits struct {
 }
 
 type Matprofitmaps struct {
-	// These maps can show which materials are different tiers of which crafted items.
-	Costs       map[int][10]int
-	Ingredients map[int][]int
-	Total       map[int]int
-	// We can add name maps, and icon ID maps here.
+	Costs       map[int][10]int  //[itemID][prices per material]
+	Ingredients map[int][]int    //[itemID][recipeIDs per material]
+	Total       map[int]int      //[itemID]totalcost
+	Names       map[int][]string //[itemID][names per material]
+	IconID      map[int][]int    //[itemID][icondid per material]
+
 }
 
 type Recipes struct {
-	Name               string  `bson:"Name" json:"Name"`
-	IconID             int     `bson:"IconID" json:"IconID"`
-	ItemResultTargetID int     `bson:"ItemID" json:"ItemResultTargetID"`
-	ID                 int     `bson:"RecipeID" json:"ID"`
-	CraftTypeTargetID  int     `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
-	AmountResult       int     `bson:"AmountResult" json:"AmountResult"`
-	IngredientNames    []int   `bson:"IngredientName"`
-	IngredientAmounts  []int   `bson:"IngredientAmount"`
-	IngredientRecipes  [][]int `bson:"IngredientRecipes"`
-	Added              int64   `bson:"Added"`
+	Name               string   `bson:"Name" json:"Name"`
+	IconID             int      `bson:"IconID" json:"IconID"`
+	ItemResultTargetID int      `bson:"ItemID" json:"ItemResultTargetID"`
+	ID                 int      `bson:"RecipeID" json:"ID"`
+	CraftTypeTargetID  int      `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
+	AmountResult       int      `bson:"AmountResult" json:"AmountResult"`
+	IngredientNames    []string `bson:"IngredientNames"`
+	IngredientID       []int    `bson:"IngredientID"`
+	IngredientIconID   []int    `bson:"IngredientIconID"`
+	IngredientAmounts  []int    `bson:"IngredientAmount"`
+	IngredientRecipes  [][]int  `bson:"IngredientRecipes"`
+	Added              int64    `bson:"Added"`
 }
 
 type Prices struct {
