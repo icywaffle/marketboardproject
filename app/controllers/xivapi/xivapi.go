@@ -14,7 +14,10 @@ import (
 )
 
 //6/25/19 - 1PM : Added new info to the struct.
-var UpdatedStructTime = int64(1561493761)
+// We want to separate the times, just in case we only update one struct.
+var UpdatedRecipesStructTime = int64(1561513719)
+var UpdatedPricesStructTime = int64(1561493761)
+var UpdatedProfitsStructTime = int64(1561493761)
 
 type Collections struct {
 	Prices  *mongo.Collection
@@ -49,7 +52,7 @@ func (coll Collections) FindRecipesDocument(recipeID int) *models.Recipes {
 	coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
 	// If the ID returns zero, then it's not in the database. We need to insert one.
 	// Also, we need to force update when we update the struct with more info.
-	if result.ID == 0 || result.Added < UpdatedStructTime {
+	if result.ID == 0 || result.Added < UpdatedRecipesStructTime {
 		result = *coll.InsertRecipesDocument(recipeID)
 	}
 	return &result
@@ -58,7 +61,7 @@ func (coll Collections) FindPricesDocument(itemID int) *models.Prices {
 	filter := bson.M{"ItemID": itemID}
 	var result models.Prices
 	coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
-	if result.ItemID == 0 || result.Added < UpdatedStructTime {
+	if result.ItemID == 0 || result.Added < UpdatedPricesStructTime {
 		result = *coll.InsertPricesDocument(itemID)
 	}
 
@@ -69,7 +72,7 @@ func (coll Collections) FindProfitsDocument(info *Information, recipeID int) *mo
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Profits
 	coll.Profits.FindOne(context.TODO(), filter).Decode(&result)
-	if result.RecipeID == 0 || result.Added < UpdatedStructTime {
+	if result.RecipeID == 0 || result.Added < UpdatedProfitsStructTime {
 		result = *coll.InsertProfitsDocument(info, recipeID)
 	}
 	return &result

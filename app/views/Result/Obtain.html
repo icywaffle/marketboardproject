@@ -28,7 +28,10 @@
 
             <h2>Analysis</h2>
             <ul class="uk-list">
-                <li>ItemID: {{.baseinfo.Profits.ItemID}}</li>
+                <li>
+                    <img class="itemicon" src="{{.baseinfo.Recipes.IconID}}" uk-img>
+                    ItemID: {{.baseinfo.Profits.ItemID}}
+                </li>
                 <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
                 <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
                 <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
@@ -38,7 +41,7 @@
             </ul>
         </div>
     </div>
-    <div class="uk-section uk-section-muted">
+    <div class=" uk-section uk-section-muted">
         <div class="uk-container">
 
             <h3>Materials</h3>
@@ -61,7 +64,11 @@
                 </ul>
             </div>
             <!-- Removes the Empty Material information -->
-            <script>$("#materiallist li[value='0']").remove();</script>
+            <script src="/public/js/obtain.js"></script>
+            <script>
+                removeemptymaterials();
+                getitemicon();
+            </script>
         </div>
     </div>
 </section>
