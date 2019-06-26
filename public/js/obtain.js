@@ -18,3 +18,24 @@ function getitemicon() {
     }
 
 }
+
+function gettotalcosts() {
+    var itemamount = $(".itemamount");
+    var totalcost = $(".totalcost");
+    for (var i = 0; i < itemamount.length; i++) {
+        // There's no point in replacing the value
+        if (itemamount.eq(i).attr("value") > 1) {
+            var tempstring = 'Total Cost: ' + itemamount.eq(i).attr("value") * totalcost.eq(i).attr("value");
+            totalcost.eq(i).html(tempstring);
+        }
+    }
+}
+
+function changetodecimals() {
+    var pricenumber = $(".pricenumber")
+    for (var i = 0; i < pricenumber.length; i++) {
+        var newnumber = pricenumber.eq(i).html().toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        pricenumber.eq(i).html(newnumber)
+    }
+
+}

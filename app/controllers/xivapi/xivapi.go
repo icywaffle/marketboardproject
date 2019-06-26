@@ -3,6 +3,7 @@ package xivapi
 import (
 	"context"
 	"fmt"
+	"math"
 	"time"
 
 	"marketboardproject/app/controllers/xivapi/database"
@@ -16,7 +17,7 @@ import (
 // We want to separate the times, just in case we only update one struct.
 var UpdatedRecipesStructTime = int64(1561573454) // Last Update : 6/26/19 - 11AM
 var UpdatedPricesStructTime = int64(1561493761)
-var UpdatedProfitsStructTime = int64(1561493761)
+var UpdatedProfitsStructTime = int64(1561586280) // Last Update : 6/26/19 - 3PM
 
 type Collections struct {
 	Prices  *mongo.Collection
@@ -152,7 +153,8 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 	profits.MaterialCosts = materialcosts
 	// We may get multiple items per craft.
 	profits.Profits = itempriceperunit*info.Recipes.AmountResult - materialcosts
-	profits.ProfitPercentage = (float32(profits.Profits)) / float32(materialcosts) * 100
+	profitmaterialratio := (float64(profits.Profits) / float64(materialcosts)) //0.01
+	profits.ProfitPercentage = float32(math.Ceil(profitmaterialratio*10000) / 100)
 
 	now := time.Now()
 	profits.Added = now.Unix()

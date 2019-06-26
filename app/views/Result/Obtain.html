@@ -26,18 +26,16 @@
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
                 <h2>Analysis</h2>
-                <h4>{{.baseinfo.Recipes.Name}}</h4>
+                <h4><img class="itemicon" src="{{.baseinfo.Recipes.IconID}}" uk-img> {{.baseinfo.Recipes.Name}}</h4>
                 <ul class="uk-list">
-                    <li>
-                        <img class="itemicon" src="{{.baseinfo.Recipes.IconID}}" uk-img>
-                        ItemID: {{.baseinfo.Profits.ItemID}}
-                    </li>
                     <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
                     <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
-                    <li>Marketboard Price: {{.baseinfo.Profits.MarketboardPrice}}</li>
-                    <li>Material Costs: {{.baseinfo.Profits.MaterialCosts}}</li>
-                    <li>Profit: {{.baseinfo.Profits.Profits}}</li>
-                    <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}</li>
+                    <li>Marketboard Price: <span class="pricenumber">{{.baseinfo.Profits.MarketboardPrice}}</span></li>
+                    <li>
+                        Material Costs: <span class="pricenumber">{{.baseinfo.Profits.MaterialCosts}}</span>
+                    </li>
+                    <li>Profit: <span class="pricenumber">{{.baseinfo.Profits.Profits}}</span></li>
+                    <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}%</li>
                 </ul>
             </div>
         </div>
@@ -46,35 +44,57 @@
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
                 <h3>Materials</h3>
-                <ul class="uk-list" id="mainrecipelist">
+                <ul class="uk-list" id="mainrecipelist" uk-accordion="multiple: true">
                     {{range $itemindex, $itemID := .baseinfo.Recipes.IngredientID}}
                     {{$itemarray := index $.baseinfo.Matprofitmaps.Ingredients $itemID}}
-                    <li value="{{$itemID}}">
-                        <h4>{{index $.baseinfo.Recipes.IngredientNames $itemindex}}</h4>
-                        <ul class="uk-list">
-                            <li>Sum Cost: {{index $.baseinfo.Matprofitmaps.Total $itemID}}</li>
-                            <li><img class="itemicon" src="{{index $.baseinfo.Recipes.IngredientIconID $itemindex}}"
-                                    uk-img>Item ID: {{$itemID}}</li>
-                        </ul>
-                    </li>
-                    <ul class="uk-list" id="materiallist">
-                        {{range $index, $matid := $itemarray}}
-                        {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
-                        {{$namearray := index $.baseinfo.Matprofitmaps.Names $itemID}}
-                        {{$iconarray := index $.baseinfo.Matprofitmaps.IconID $itemID}}
-                        <li value="{{$matid}}">
-                            <h5>{{index $namearray $index}}</h5>
-                            <ul class="uk-list">
-                                <li>Cost: {{index $pricearray $index}}</li>
-                                <li>
-                                    <img class="itemicon" src="{{index $iconarray $index}}" uk-img>
-                                    Item ID: {{$matid}}
-                                </li>
-                            </ul>
-                        </li>
+                    <li class="uk-close" value="{{$itemID}}">
+                        <a class="uk-accordion-title" href="#">
+                            <h4>
+                                <img class="itemicon" src="{{index $.baseinfo.Recipes.IngredientIconID $itemindex}}"
+                                    uk-img>
+                                {{index $.baseinfo.Recipes.IngredientNames $itemindex}}
+                            </h4>
+                        </a>
+                        <div class="uk-accordion-content">
 
-                        {{end}}
-                    </ul>
+                            <ul class="uk-list">
+                                <li class="itemamount" value="{{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}"
+                                    style="margin-top: -20px;">
+                                    Amount Required :
+                                    {{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}</li>
+                                <li class="totalcost" value="{{index $.baseinfo.Matprofitmaps.Total $itemID}}">Cost for
+                                    Crafting:
+                                    {{index $.baseinfo.Matprofitmaps.Total $itemID}}</li>
+                                <li>Item ID: {{$itemID}}</li>
+                            </ul>
+
+
+                            <ul class="uk-list" id="materiallist" uk-accordion="multiple: true"
+                                style="margin-top: 20px;">
+                                {{range $index, $matid := $itemarray}}
+                                {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
+                                {{$namearray := index $.baseinfo.Matprofitmaps.Names $itemID}}
+                                {{$iconarray := index $.baseinfo.Matprofitmaps.IconID $itemID}}
+                                <li class=" uk-close" value="{{$matid}}">
+                                    <a class="uk-accordion-title" href="#">
+                                        <h5>
+                                            <img class="itemicon" src="{{index $iconarray $index}}" uk-img>
+                                            {{index $namearray $index}}
+                                        </h5>
+                                    </a>
+                                    <div class="uk-accordion-content">
+                                        <ul class="uk-list">
+                                            <li style="margin-top: -20px;">Cost: {{index $pricearray $index}}</li>
+                                            <li style="margin-bottom: 20px;">
+                                                Item ID: {{$matid}}
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </li>
+                                {{end}}
+                            </ul>
+                        </div>
+                    </li>
                     {{end}}
                 </ul>
             </div>
@@ -83,6 +103,8 @@
             <script>
                 removeemptymaterials();
                 getitemicon();
+                gettotalcosts();
+                changetodecimals();
             </script>
         </div>
     </div>
