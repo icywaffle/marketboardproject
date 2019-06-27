@@ -1,6 +1,6 @@
 ## Marketboard Project
 
-[ffxivprofit](ffxivprofit.com)
+[ffxivprofit](http://ffxivprofit.com/)
 
 Designed to calculate whether a crafted item will give you profit.
 
