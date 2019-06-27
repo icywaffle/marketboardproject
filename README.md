@@ -1,4 +1,7 @@
 ## Marketboard Project
+
+ffxivprofit.com
+
 Designed to calculate whether a crafted item will give you profit.
 
 Since it will be impossible to grab information about every single item in the game without putting a stressed load on any API,
