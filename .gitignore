@@ -8,3 +8,4 @@ routes/
 /public/js/uikit/
 conf/app.conf
 conf/routes
+app/init.go
