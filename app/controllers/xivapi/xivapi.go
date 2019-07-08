@@ -50,21 +50,12 @@ func (coll Collections) FindRecipesDocument(recipeID int) *models.Recipes {
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Recipes
 	coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
-	// If the ID returns zero, then it's not in the database. We need to insert one.
-	// Also, we need to force update when we update the struct with more info.
-	if result.ID == 0 || result.Added < UpdatedRecipesStructTime {
-		result = *coll.InsertRecipesDocument(recipeID)
-	}
 	return &result
 }
 func (coll Collections) FindPricesDocument(itemID int) *models.Prices {
 	filter := bson.M{"ItemID": itemID}
 	var result models.Prices
 	coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
-	if result.ItemID == 0 || result.Added < UpdatedPricesStructTime {
-		result = *coll.InsertPricesDocument(itemID)
-	}
-
 	return &result
 }
 
@@ -72,9 +63,6 @@ func (coll Collections) FindProfitsDocument(info *Information, recipeID int) *mo
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Profits
 	coll.Profits.FindOne(context.TODO(), filter).Decode(&result)
-	if result.RecipeID == 0 || result.Added < UpdatedProfitsStructTime {
-		result = *coll.InsertProfitsDocument(info, recipeID)
-	}
 	return &result
 }
 
@@ -312,4 +300,37 @@ func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 func ProfitInformation(profit ProfitHandler) []*models.Profits {
 
 	return profit.ProfitDescCursor()
+}
+
+// Checks whether the information is filled, and inserts information into the database if not.
+func InsertInformation(collections CollectionHandler, recipeID int) *Information {
+	// This is recalled in case someone else had added prior to the Mutex Unlock.
+	result := BaseInformation(collections, recipeID)
+
+	// If we're missing anything that wasn't in the database,
+	// Then we call upon the API to find these information.
+	if result.Recipes.ID == 0 || result.Recipes.Added < UpdatedRecipesStructTime {
+		result.Recipes = collections.InsertRecipesDocument(recipeID)
+	}
+
+	if result.Prices.ItemID == 0 || result.Prices.Added < UpdatedPricesStructTime {
+		result.Prices = collections.InsertPricesDocument(result.Recipes.ItemResultTargetID)
+	}
+
+	if result.Profits.RecipeID == 0 || result.Profits.Added < UpdatedProfitsStructTime {
+		// We need to re-initialize our maps
+		var matprofitmaps models.Matprofitmaps
+		matprofitmaps.Costs = make(map[int][10]int)
+		matprofitmaps.Ingredients = make(map[int][]int)
+		matprofitmaps.Total = make(map[int]int)
+		matprofitmaps.Names = make(map[int][]string)
+		matprofitmaps.IconID = make(map[int][]int)
+		collections.FillProfitMaps(result, &matprofitmaps)
+		result.Matprofitmaps = &matprofitmaps
+
+		result.Profits = collections.InsertProfitsDocument(result, recipeID)
+	}
+
+	return result
+
 }

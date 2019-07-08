@@ -5,12 +5,14 @@ import (
 	"log"
 	"marketboardproject/app/controllers/xivapi"
 	"marketboardproject/keys"
+	"sync"
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 var DB xivapi.Collections
+var Mutex sync.Mutex
 
 // Initializes DB so it would give the Clients so that we can access the database
 func InitDB() {

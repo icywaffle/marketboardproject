@@ -22,6 +22,15 @@ func (c Result) Obtain() revel.Result {
 
 	baseinfo := xivapi.BaseInformation(DB, recipeID)
 
+	// We need to lock here, to prevent multiple users from updating/calling from an outdated database
+	// When one person inserts a new item, the second person will still have an outdated database.
+	// This also allows multiple people to search for different items without being locked behind mutex
+	if baseinfo.Recipes.ID == 0 || baseinfo.Profits.ItemID == 0 || baseinfo.Prices.ItemID == 0 {
+		Mutex.Lock()
+		baseinfo = xivapi.InsertInformation(DB, recipeID)
+		Mutex.Unlock()
+	}
+
 	return c.Render(baseinfo)
 }
 
