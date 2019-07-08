@@ -2,7 +2,7 @@ test-results/
 tmp/
 routes/
 /keys/keys.go
-/conf/
+/conf/app.conf
 /public/img/icon/
 /public/css/uikit/
 /public/js/uikit/
