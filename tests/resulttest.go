@@ -128,6 +128,20 @@ func (t *ResultTest) Test_fails_if_BaseInformation_maps_are_nil() {
 	t.AssertEqual(testinfo.Matprofitmaps.Costs, info.Matprofitmaps.Costs)
 }
 
+func (t *ResultTest) Test_fails_if_InsertInformation_maps_are_nil() {
+	var testfake FakeCollections
+	info := xivapi.InsertInformation(testfake, 33180)
+	testmap := make(map[int][10]int)
+	testmap[24322] = [10]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	testinfo := xivapi.Information{
+		Matprofitmaps: &models.Matprofitmaps{
+			Costs: testmap,
+		},
+	}
+
+	t.AssertEqual(testinfo.Matprofitmaps.Costs, info.Matprofitmaps.Costs)
+}
+
 // Unit test for ProfitInformation
 func (t *ResultTest) Test_fails_if_ProfitInformation_returns_nothing() {
 	var fakecollection FakeCollections

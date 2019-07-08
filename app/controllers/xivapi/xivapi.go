@@ -176,6 +176,9 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 		if info.Recipes.IngredientID[i] != 0 {
 			var matpriceinfo models.Prices
 			matpriceinfo = *coll.FindPricesDocument(info.Recipes.IngredientID[i])
+			if matpriceinfo.ItemID == 0 {
+				coll.InsertPricesDocument(info.Recipes.IngredientID[i])
+			}
 			// We need to also deal with vendor prices, since they won't have market prices.
 			if matpriceinfo.VendorPrice != 0 {
 				pricearray[i] = matpriceinfo.VendorPrice * info.Recipes.IngredientAmounts[i]
@@ -207,6 +210,9 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 			// And this will allow us to get information about mats of mats etc.
 			var matinfo Information
 			matinfo.Recipes = coll.FindRecipesDocument(info.Recipes.IngredientRecipes[i][0])
+			if matinfo.Recipes.ID == 0 {
+				coll.InsertRecipesDocument(info.Recipes.IngredientRecipes[i][0])
+			}
 			// We can then use this new material information, to fill the maps some more.
 			coll.FillProfitMaps(&matinfo, matprofitmaps)
 		}
@@ -305,7 +311,9 @@ func ProfitInformation(profit ProfitHandler) []*models.Profits {
 // Checks whether the information is filled, and inserts information into the database if not.
 func InsertInformation(collections CollectionHandler, recipeID int) *Information {
 	// This is recalled in case someone else had added prior to the Mutex Unlock.
-	result := BaseInformation(collections, recipeID)
+	info := BaseInformation(collections, recipeID)
+	var result Information
+	result = *info
 
 	// If we're missing anything that wasn't in the database,
 	// Then we call upon the API to find these information.
@@ -325,12 +333,12 @@ func InsertInformation(collections CollectionHandler, recipeID int) *Information
 		matprofitmaps.Total = make(map[int]int)
 		matprofitmaps.Names = make(map[int][]string)
 		matprofitmaps.IconID = make(map[int][]int)
-		collections.FillProfitMaps(result, &matprofitmaps)
+		collections.FillProfitMaps(&result, &matprofitmaps)
 		result.Matprofitmaps = &matprofitmaps
 
-		result.Profits = collections.InsertProfitsDocument(result, recipeID)
+		result.Profits = collections.InsertProfitsDocument(&result, recipeID)
 	}
 
-	return result
+	return &result
 
 }
