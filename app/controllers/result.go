@@ -30,3 +30,8 @@ func (c Result) Profit() revel.Result {
 
 	return c.Render(profitpercentage)
 }
+
+func (c Result) Search() revel.Result {
+	recipename := c.Params.Form.Get("recipename")
+	return c.Render(recipename)
+}
