@@ -11,7 +11,7 @@ Then with this, we can fill up a database full of items, eventually, to find
 an item that has the highest amount of profit percentage.
 
 ## Motivation
-Most current APIs only have current marketboard price, and graphs of history,
+Most current ffxiv related websites only have current marketboard price, and graphs of history,
 but they never really show you what items make the most amount of money for 
 the price of making them.
 
@@ -42,7 +42,8 @@ A MongoDB Driver that allows an easier way to access the mongodb.
 Extracts game assets from Final Fantasy XIV, i.e. Item Icons.
 
 ## Current Features
-Profits / Costs of Items you want to craft.
+A search to be able to look for what items you want to craft.
+Percentage of profit made if you currently sold according to the lowest listed price.
 Sorted List of items with most profits.
 
 ## Future Features
@@ -50,32 +51,23 @@ Total List of prices and materials that you need for crafting.
 Save your searched items into the database so that you can compare which items may net you more profit
 A cost of time in how much materials to actually gather.
 
-## Development Environment
-For current build,
+## Structure
+The Home page brings you to a search bar that you use to be able to find a recipe ID corresponding to some recipe that you search.
+This uses the javascript function
 
-Create a MongoDB server.
+`function xivapisearch()`
 
-Uncomment and paste your Mongo Connection link in `keys/samplekeys.go`
+which automatically concatenates the search string for the xivapi, and returns a list of items that you can click on. With these items, you click on, the javascript function
 
-Create an XIVAPI account and obtain your own private key.
+`function obtainrecipe(recipeid)` 
 
-Uncomment and past your private key in `keys/samplekeys.go`
+sends you to a page that is routed to the golang function
 
-Install the MongoDB-Go-Driver, since it's one of the dependencies for the code.
+`func (c Result) Obtain() revel.Result`
 
-Next, install Revel and create a Revel app in your GOPATH, for example
-`revel new marketboardproject`
+which queries the database accordingly, and also inserts and queries the xivapi if the database does not have the information.
 
-This allows you to have a "skeleton" app. Then you may be able to copy this project and overwrite over this skeleton, in `$GOPATH/src/marketboardproject.`
-
-Next, to display the site properly, you must add the UIkit dependencies inside `/public/css/UIkit` and `/public/js/UIkit`.
-
-Also, you need to use SaintCoinach to be able to render icons correctly. Run SaintCoinach.Cmd.exe and type ui, and wait until it mines the icon data. You put the folders from 020000-065000 that it creates, into `/public/img/icon/`.
-
-Then you just run using the command
-`revel run -a marketboardproject`
-
-and finally connect to localhost:9000.
+This is the basis in which the website builds upon information without needing to constantly query the XIVAPI.
 
 ## Testing
 
