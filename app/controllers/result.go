@@ -25,7 +25,8 @@ func (c Result) Obtain() revel.Result {
 	// We need to lock here, to prevent multiple users from updating/calling from an outdated database
 	// When one person inserts a new item, the second person will still have an outdated database.
 	// This also allows multiple people to search for different items without being locked behind mutex
-	if baseinfo.Recipes.ID == 0 || baseinfo.Profits.ItemID == 0 || baseinfo.Prices.ItemID == 0 {
+	// Added is based off of when the database adds it. If it's zero, then it was never in the database.
+	if baseinfo.Recipes.Added < xivapi.UpdatedRecipesStructTime || baseinfo.Profits.Added < xivapi.UpdatedProfitsStructTime || baseinfo.Prices.Added == xivapi.UpdatedPricesStructTime {
 		Mutex.Lock()
 		baseinfo = xivapi.InsertInformation(DB, recipeID)
 		Mutex.Unlock()
@@ -36,6 +37,16 @@ func (c Result) Obtain() revel.Result {
 
 func (c Result) Profit() revel.Result {
 	profitpercentage := xivapi.ProfitInformation(DB)
+	// To update profits, we actually need all the previous information.
+	// And check through all the items to make sure we're updating them.
+	for i := 0; i < len(profitpercentage); i++ {
+		if profitpercentage[i].Added < xivapi.UpdatedProfitsStructTime {
+			Mutex.Lock()
+			baseinfo := xivapi.InsertInformation(DB, profitpercentage[i].RecipeID)
+			profitpercentage[i] = baseinfo.Profits
+			Mutex.Unlock()
+		}
+	}
 
 	return c.Render(profitpercentage)
 }

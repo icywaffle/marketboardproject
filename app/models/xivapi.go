@@ -1,8 +1,10 @@
 package models
 
 type Profits struct {
+	Name             string  `bson:"Name"`
 	ItemID           int     `bson:"ItemID"`
 	RecipeID         int     `bson:"RecipeID"`
+	IconID           int     `bson:"IconID"`
 	MarketboardPrice int     `bson:"MarketboardPrice"`
 	MaterialCosts    int     `bson:"MaterialCosts"`
 	Profits          int     `bson:"Profits"`

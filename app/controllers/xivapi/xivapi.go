@@ -17,7 +17,7 @@ import (
 // We want to separate the times, just in case we only update one struct.
 var UpdatedRecipesStructTime = int64(1561573454) // Last Update : 6/26/19 - 11AM
 var UpdatedPricesStructTime = int64(1561493761)
-var UpdatedProfitsStructTime = int64(1561586280) // Last Update : 6/26/19 - 3PM
+var UpdatedProfitsStructTime = int64(1562657644) // Last Update : 7/9/19 - 9PM
 
 type Collections struct {
 	Prices  *mongo.Collection
@@ -125,6 +125,8 @@ func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
 // Creates and then inserts the profits document
 func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *models.Profits {
 	var profits models.Profits
+	profits.Name = info.Recipes.Name
+	profits.IconID = info.Recipes.IconID
 	profits.ItemID = info.Recipes.ItemResultTargetID
 	profits.RecipeID = info.Recipes.ID
 
@@ -317,15 +319,15 @@ func InsertInformation(collections CollectionHandler, recipeID int) *Information
 
 	// If we're missing anything that wasn't in the database,
 	// Then we call upon the API to find these information.
-	if result.Recipes.ID == 0 || result.Recipes.Added < UpdatedRecipesStructTime {
+	if result.Recipes.Added < UpdatedRecipesStructTime {
 		result.Recipes = collections.InsertRecipesDocument(recipeID)
 	}
 
-	if result.Prices.ItemID == 0 || result.Prices.Added < UpdatedPricesStructTime {
+	if result.Prices.Added < UpdatedPricesStructTime {
 		result.Prices = collections.InsertPricesDocument(result.Recipes.ItemResultTargetID)
 	}
 
-	if result.Profits.RecipeID == 0 || result.Profits.Added < UpdatedProfitsStructTime {
+	if result.Profits.Added < UpdatedProfitsStructTime {
 		// We need to re-initialize our maps
 		var matprofitmaps models.Matprofitmaps
 		matprofitmaps.Costs = make(map[int][10]int)

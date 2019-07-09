@@ -6,7 +6,7 @@ function removeemptymaterials() {
     $("#mainrecipelist li[value='0']").remove();
 }
 
-
+// Uses .itemicon values, and converts the src to the actual image location.
 function getitemicon() {
     var x = $(".itemicon");
     for (var i = 0; i < x.length; i++) {
@@ -19,6 +19,7 @@ function getitemicon() {
 
 }
 
+// Grabs from Obtain, the .itemamount, and .totalcost, to give us the real total costs of individual items.
 function gettotalcosts() {
     var itemamount = $(".itemamount");
     var totalcost = $(".totalcost");
@@ -31,6 +32,7 @@ function gettotalcosts() {
     }
 }
 
+// Changes all .pricenumbers to comma'd numbers
 function changetodecimals() {
     var pricenumber = $(".pricenumber")
     for (var i = 0; i < pricenumber.length; i++) {
@@ -38,4 +40,32 @@ function changetodecimals() {
         pricenumber.eq(i).html(newnumber)
     }
 
+}
+
+function changeunixtodate() {
+    var unixtime = $(".datetime")
+    for (var i = 0; i < unixtime.length; i++) {
+        var newtime = parseInt(unixtime.eq(i).attr("value")) * 1000
+        var date = new Date(newtime)
+        var days = date.getDate()
+        var months = date.getMonth()
+        var years = date.getFullYear()
+        var hours = date.getHours()
+        var minutes = date.getMinutes()
+        if (hours >= 12) {
+            var ampm = "pm"
+        } else {
+            var ampm = "am"
+        }
+        hours = hours % 12
+        if (hours == 0) {
+            hours = 12
+        }
+        if (minutes < 10) {
+            minutes = "0" + minutes
+        }
+        var datestring = "Added: " + days + "/" + months + "/" + years + " at " + hours + ":" + minutes + " " + ampm
+
+        unixtime.eq(i).html(datestring)
+    }
 }

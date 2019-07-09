@@ -25,17 +25,19 @@
     <div class="uk-section uk-section-default uk-background-secondary uk-light">
         <div class="uk-container uk-width-3-4 uk-float-right">
             <h2>Recipes with Most Profit Percentage</h2>
+            <h3>Time Zone : Pacific Daylight Time (GMT-0700)</h3>
             <ul class="uk-list uk-list-divider uk-width-1-2">
-                {{range $i,$profitarray := .profitpercentage}}
-                <li>Recipe ID: <strong>{{$profitarray.RecipeID}}</strong>
-                    <ul>
-                        <li>Profit: <strong>{{$profitarray.ProfitPercentage}}%</strong></li>
-                        <li>Item: {{(index $.profitpercentage $i).ItemID}}</li>
-                    </ul>
-
-                </li>
+                {{range $i,$itemprofit := .profitpercentage}}
+                <h4><img class="itemicon" value="{{$itemprofit.IconID}}" uk-img> {{$itemprofit.Name}}</h4>
+                <ul class="uk-list">
+                    <li>Profit: {{$itemprofit.ProfitPercentage}}%</li>
+                    <li class="pricenumber">Total Cost : {{$itemprofit.MaterialCosts}}</li>
+                    <li class="pricenumber">Lowest Market Price : {{$itemprofit.MarketboardPrice}}</li>
+                    <li class="datetime" value="{{$itemprofit.Added}}"></li>
+                </ul>
                 {{end}}
             </ul>
+
         </div>
     </div>
 </section>
@@ -47,6 +49,14 @@
         </div>
     </div>
 </div>
+
+<!-- Removes the Empty Material information -->
+<script src="/public/js/obtain.js"></script>
+<script>
+    getitemicon();
+    changetodecimals();
+    changeunixtodate();
+</script>
 
 
 
