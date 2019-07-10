@@ -32,7 +32,7 @@ func (c Result) Obtain() revel.Result {
 		Mutex.Unlock()
 	}
 
-	return c.Render(baseinfo)
+	return c.Render(baseinfo, DiscordUser)
 }
 
 func (c Result) Profit() revel.Result {

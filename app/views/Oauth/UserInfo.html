@@ -1,4 +1,4 @@
-{{set . "title" "User"}}
+{{set . "title" "UserInfo"}}
 {{template "header.html" .}}
 <nav class="uk-navbar uk-navbar-container">
     <div class="uk-navbar-left">
@@ -21,8 +21,7 @@
 </div>
 
 <section>
-    <h1>Logged In!</h1>
-    <h2>{{.user.Username}} {{.user.NumTag}}</h2>
+    <h1>{{.results}}</h1>
 </section>
 
 
