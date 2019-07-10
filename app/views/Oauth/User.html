@@ -1,0 +1,29 @@
+{{set . "title" "User"}}
+{{template "header.html" .}}
+<nav class="uk-navbar uk-navbar-container">
+    <div class="uk-navbar-left">
+        <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
+            <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
+        </a>
+    </div>
+</nav>
+
+<div id="offcanvas-slide" uk-offcanvas>
+    <div class="uk-offcanvas-bar">
+
+        <ul class="uk-nav uk-nav-default">
+            <li class="uk-active"><a href="/">Home</a></li>
+            <li><a href="/Profit">Profits</a></li>
+            <li><a href="/Login">Login</a></li>
+        </ul>
+
+    </div>
+</div>
+
+<section>
+    <h1>Logged In!</h1>
+    <h2>{{.user.Username}} {{.user.NumTag}}</h2>
+</section>
+
+
+{{template "footer.html" .}}

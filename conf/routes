@@ -11,7 +11,9 @@ module:testrunner
 GET     /                                      Result.Index
 POST    /Search                                Result.Search
 POST    /Obtain                                Result.Obtain
-GET     /Profit                                Result.Profit 
+GET     /Profit                                Result.Profit
+GET     /Login                                 Oauth.Login
+GET     /User                                  Oauth.User
 
 
 
