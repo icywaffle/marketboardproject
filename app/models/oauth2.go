@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 )
 
 type DiscordOAuth2 struct {
@@ -22,14 +23,18 @@ type Discordheader struct {
 }
 
 type AccessToken struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
+	AccessToken  string    `json:"access_token"`
+	TokenType    string    `json:"token_type"`
+	Expiration   time.Time `json:"expires_in"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
+// This allows us to also keep their avatar persisting on a page per session.
 type DiscordUser struct {
-	UniqueID string `json:"id"`
-	Username string `json:"username"`
-	NumTag   string `json:"discriminator"`
+	UniqueID   string `json:"id"`
+	Username   string `json:"username"`
+	NumTag     string `json:"discriminator"`
+	AvatarHash string `json:"avatar"`
 }
 
 // Handles logging in and obtaining an Access Token that we can use to obtain data.
