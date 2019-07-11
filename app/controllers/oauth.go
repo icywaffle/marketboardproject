@@ -2,10 +2,8 @@ package controllers
 
 import (
 	"encoding/json"
-	"fmt"
 	"marketboardproject/app/models"
 	"marketboardproject/keys"
-	"net/http"
 
 	"github.com/revel/revel"
 )
@@ -19,17 +17,9 @@ type Oauth struct {
 // Will send to Authorization if there is no cookies.
 func (c Oauth) Login() revel.Result {
 	// Checks if there is a session for this user.
-	r := c.Request.In.GetRaw().(*http.Request)
-	// If the token expired, we need to renew one.
-	usercookie, _ := r.Cookie("access")
-	if usercookie != nil {
-		// If a session has the token in it still (err == nil), we can safely redirect.
-		_, err := c.Session.Get(usercookie.Value)
-		if err == nil {
-			return c.Redirect("/UserInfo")
-		} else {
-			return c.Redirect(keys.DiscordURL)
-		}
+	info, _ := c.Session.Get("discordinfo")
+	if info != nil {
+		return c.Redirect("/UserInfo")
 	} else {
 		// Otherwise Authorize.
 		return c.Redirect(keys.DiscordURL)
@@ -47,31 +37,20 @@ func (c Oauth) User() revel.Result {
 	json.Unmarshal(userbytevalue, &DiscordUser)
 
 	// Assign to the session, the discorduser object.
-	c.Session[access.AccessToken] = DiscordUser
+	c.Session["discordinfo"] = DiscordUser
 
-	// We need to save this access token to a cookie, so that the user can access the information
-	accesscookie := &http.Cookie{
-		Name:     "access",
-		Value:    access.AccessToken,
-		Expires:  access.Expiration,
-		Secure:   true,
-		HttpOnly: true,
-	}
-	c.SetCookie(accesscookie)
 	return c.Redirect("/UserInfo")
 }
 
 // Post-Authentication
 func (c Oauth) UserInfo() revel.Result {
-	// We need to obtain the user's key to get their information.
-	r := c.Request.In.GetRaw().(*http.Request)
-	usercookie, _ := r.Cookie("access")
-	discorduser, _ := c.Session.Get(usercookie.Value)
+	// On any page, we want to see this information.
+
+	// We've stored the discord info into the session.
+	discorduser, _ := c.Session.Get("discordinfo")
 	// We're gonna need to cast this as a map to get our information back.
+	// However, the keys will be in JSON format.
 	discordmap, _ := discorduser.(map[string]interface{})
 
-	fmt.Println(discordmap)
-	t := discordmap["id"]
-
-	return c.Render(t)
+	return c.Render(discordmap)
 }

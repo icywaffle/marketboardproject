@@ -69,3 +69,13 @@ function changeunixtodate() {
         unixtime.eq(i).html(datestring)
     }
 }
+
+function getavatar() {
+    var user = $("#id").attr("value")
+    var avatarhash = $("#avatar").attr("value")
+    var path = "https://cdn.discordapp.com/avatars/" + user + "/" + avatarhash + ".gif"
+
+    var userimage = $("#userimage")
+    userimage.attr("src", path)
+    $("#discorduser").html($("#username").attr("value") + "#" + $("#discriminator").attr("value"))
+}
