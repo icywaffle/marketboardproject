@@ -69,28 +69,3 @@ function changeunixtodate() {
     }
 }
 
-function getavatar() {
-    var user = $("#id").attr("value")
-    var avatarhash = $("#avatar").attr("value")
-    var path = "https://cdn.discordapp.com/avatars/" + user + "/" + avatarhash + ".gif"
-
-    var userimage = $("#userimage")
-    userimage.attr("src", path)
-    $("#discorduser").html($("#username").attr("value") + "#" + $("#discriminator").attr("value"))
-}
-
-// Instead of iterating through golang's templates everytime, we just the map results,
-// and create the document lists through javascript itself.
-function innermaterials() {
-
-    var innermatmap = $(".innermatmaps")
-    for (var i = 0; i < innermatmap.length; i++) {
-        if (innermatmap.eq(i).attr("value") == "[]") {
-            innermatmap.eq(i).remove()
-        } else {
-            var divaccordian = document.createElement("div")
-            divaccordian.className = "uk-accordion-content"
-
-        }
-    }
-}

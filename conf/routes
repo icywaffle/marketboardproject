@@ -15,6 +15,7 @@ GET     /Profit                                Result.Profit
 GET     /Login                                 Oauth.Login
 GET     /User                                  Oauth.User
 GET     /UserInfo                              Oauth.UserInfo
+GET     /Logout                                Oauth.LogOut
 
 
 

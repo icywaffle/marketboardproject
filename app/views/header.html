@@ -2,6 +2,13 @@
 
 <html>
 
+<!-- We're keeping scripts here for showing off purposes.
+This allows us to just keep the code written purely by me onto git,
+instead of flooding with local compiled scripts.-->
+
+<!-- In real production environments,
+We would want to minify these scripts.-->
+
 <head>
   <title>{{.title}}</title>
   <!-- Styling Content-->
@@ -10,17 +17,18 @@
   <link rel="stylesheet" href="/public/css/uikit/uikit.min.css" />
   <script src="/public/js/uikit/uikit.min.js"></script>
   <script src="/public/js/uikit/uikit-icons.min.js"></script>
-  <!-- Jquery -->
-  <script src="/public/js/jquery-3.4.1.js"> </script>
   <!-- Web Tab Icon -->
-  <link rel="shortcut icon" type="image/png" href="/public/img/favicon.png">
+  <link rel="shortcut icon" type="image/gif" href="/public/img/favicon.gif">
   <!-- Web Login Icon-->
   <script src="/public/js/obtain.js"></script>
   <!-- ReactJS -->
   <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6.26.0/babel.js"></script>
   <!-- Jquery -->
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <!-- Web Login Info -->
+  <script src="/public/js/userinfo.js" type="text/babel"></script>
 </head>
 
 <body>
@@ -41,13 +49,19 @@
         <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
       </a>
     </div>
-    <div class="uk-navbar-right">
-      <span class="uk-margin-small-right" id="discorduser"></span>
-      <img class="uk-icon-button uk-margin-small-right" id="userimage">
+    <div class="uk-navbar-right" id="discordinfo">
     </div>
+    <div uk-dropdown class="uk-background-muted" id="usernavdropdown">
+      <ul class="uk-nav uk-dropdown-nav">
+        <li><a href="/Logout">Logout</a></li>
+      </ul>
+    </div>
+
+
+
   </nav>
 
   <!-- Sets Discord Info at top of page-->
-  <script>
-    getavatar()
+  <script type="text/babel">
+    userlogin()
   </script>

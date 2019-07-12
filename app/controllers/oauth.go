@@ -30,16 +30,22 @@ func (c Oauth) Login() revel.Result {
 // We add them to the session and put a token to their cookie.
 func (c Oauth) User() revel.Result {
 	code := c.Params.Get("code")
-	accesstokenbytevalue := keys.Oauthparams.DiscordAccessToken(code)
-	var access models.AccessToken
-	json.Unmarshal(accesstokenbytevalue, &access)
-	userbytevalue := keys.Oauthparams.DiscordGetUserObject(access.AccessToken)
-	json.Unmarshal(userbytevalue, &DiscordUser)
+	// Protect user in case they cancel.
+	if len(code) == 0 {
+		return c.Redirect("/")
+	} else {
+		accesstokenbytevalue := keys.Oauthparams.DiscordAccessToken(code)
+		var access models.AccessToken
+		json.Unmarshal(accesstokenbytevalue, &access)
+		userbytevalue := keys.Oauthparams.DiscordGetUserObject(access.AccessToken)
+		json.Unmarshal(userbytevalue, &DiscordUser)
 
-	// Assign to the session, the discorduser object.
-	c.Session["discordinfo"] = DiscordUser
+		// Assign to the session, the discorduser object.
+		c.Session["discordinfo"] = DiscordUser
 
-	return c.Redirect("/UserInfo")
+		return c.Redirect("/")
+	}
+
 }
 
 // Post-Authentication
@@ -59,4 +65,10 @@ func (c Oauth) renderdiscorduser() {
 	} else {
 		c.ViewArgs["discordmap"] = nil
 	}
+}
+
+func (c Oauth) LogOut() revel.Result {
+	// We just remove the session here.
+	c.Session.Del("discordinfo")
+	return c.Redirect("/")
 }
