@@ -7,4 +7,4 @@ routes/
 /public/js/uikit/
 conf/app.conf
 app/init.go
-cert/
+/cert/

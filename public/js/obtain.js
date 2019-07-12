@@ -4,6 +4,8 @@ function removeemptymaterials() {
     $("#materiallist li[value='0']").remove();
 
     $("#mainrecipelist li[value='0']").remove();
+
+    $("#materialinfo li[value='0']").remove();
 }
 
 // Uses .itemicon values, and converts the src to the actual image location.
@@ -24,11 +26,8 @@ function gettotalcosts() {
     var itemamount = $(".itemamount");
     var totalcost = $(".totalcost");
     for (var i = 0; i < itemamount.length; i++) {
-        // There's no point in replacing the value
-        if (itemamount.eq(i).attr("value") > 1) {
-            var tempstring = 'Total Cost: ' + itemamount.eq(i).attr("value") * totalcost.eq(i).attr("value");
-            totalcost.eq(i).html(tempstring);
-        }
+        var tempstring = 'Total Cost: ' + itemamount.eq(i).attr("value") * totalcost.eq(i).attr("value");
+        totalcost.eq(i).html(tempstring);
     }
 }
 
@@ -69,3 +68,4 @@ function changeunixtodate() {
         unixtime.eq(i).html(datestring)
     }
 }
+

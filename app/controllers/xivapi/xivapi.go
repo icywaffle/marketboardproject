@@ -186,7 +186,7 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 				pricearray[i] = matpriceinfo.VendorPrice * info.Recipes.IngredientAmounts[i]
 			} else {
 				if len(matpriceinfo.Sargatanas.Prices) > 0 {
-					pricearray[i] = matpriceinfo.Sargatanas.Prices[0].PricePerUnit * info.Recipes.IngredientAmounts[i]
+					pricearray[i] = matpriceinfo.Sargatanas.Prices[0].PricePerUnit
 				} else {
 					// If the market's empty, there's no available price for it.
 					// This is something we have to integrate in the future.

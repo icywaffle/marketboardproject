@@ -2,13 +2,6 @@
 {{template "header.html" .}}
 
 
-<nav class="uk-navbar uk-navbar-container">
-    <div class="uk-navbar-left">
-        <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
-            <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
-        </a>
-    </div>
-</nav>
 
 <div id="offcanvas-slide" uk-offcanvas>
     <div class="uk-offcanvas-bar">
@@ -25,21 +18,24 @@
     <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
+                <h1>{{.DiscordUser.UniqueID}}</h1>
                 <h2>Analysis</h2>
                 <h4><img class="itemicon" value="{{.baseinfo.Recipes.IconID}}" uk-img> {{.baseinfo.Recipes.Name}}</h4>
                 <ul class="uk-list">
-                    <li>RecipeID: {{.baseinfo.Profits.RecipeID}}</li>
-                    <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
                     <li>Marketboard Price: <span class="pricenumber">{{.baseinfo.Profits.MarketboardPrice}}</span></li>
                     <li>
                         Material Costs: <span class="pricenumber">{{.baseinfo.Profits.MaterialCosts}}</span>
                     </li>
-                    <li>Profit: <span class="pricenumber">{{.baseinfo.Profits.Profits}}</span></li>
+                    <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
+                    <li>All Sold Profit: <span class="pricenumber">{{.baseinfo.Profits.Profits}}</span></li>
                     <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}%</li>
+                    {{$basecostarray := index .baseinfo.Matprofitmaps.Costs .baseinfo.Recipes.ItemResultTargetID}}
                 </ul>
             </div>
         </div>
     </div>
+</section>
+<section>
     <div class="uk-section uk-section-muted uk-animation-slide-left">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
@@ -53,18 +49,23 @@
                                 <img class="itemicon" value="{{index $.baseinfo.Recipes.IngredientIconID $itemindex}}"
                                     uk-img>
                                 {{index $.baseinfo.Recipes.IngredientNames $itemindex}}
+                                <span class="itemamount"
+                                    value="{{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}">
+                                    x{{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}</span>
                             </h4>
                         </a>
-                        <div class="uk-accordion-content">
-
-                            <ul class="uk-list">
-                                <li class="itemamount" value="{{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}"
-                                    style="margin-top: -20px;">
-                                    Amount Required :
-                                    {{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}</li>
-                                <li class="totalcost" value="{{index $.baseinfo.Matprofitmaps.Total $itemID}}">Cost for
-                                    Crafting:
-                                    {{index $.baseinfo.Matprofitmaps.Total $itemID}}</li>
+                        <div class=" uk-accordion-content">
+                            <ul class="uk-list" id="materialinfo">
+                                <li class="pricenumber" style="margin-top: -20px;">Marketboard Price:
+                                    {{index $basecostarray $itemindex}}</li>
+                                <li class="pricenumber" value="{{index $.baseinfo.Matprofitmaps.Total $itemID}}">
+                                    Material Cost for One:
+                                    {{index $.baseinfo.Matprofitmaps.Total $itemID}}
+                                </li>
+                                <li class="pricenumber totalcost"
+                                    value="{{index $.baseinfo.Matprofitmaps.Total $itemID}}">
+                                    Total Cost:
+                                </li>
                                 <li>Item ID: {{$itemID}}</li>
                             </ul>
 
@@ -75,7 +76,7 @@
                                 {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
                                 {{$namearray := index $.baseinfo.Matprofitmaps.Names $itemID}}
                                 {{$iconarray := index $.baseinfo.Matprofitmaps.IconID $itemID}}
-                                <li class=" uk-close" value="{{$matid}}">
+                                <li class="uk-close" value="{{$matid}}">
                                     <a class="uk-accordion-title" href="#">
                                         <h5>
                                             <img class="itemicon" value="{{index $iconarray $index}}" uk-img>
@@ -84,11 +85,33 @@
                                     </a>
                                     <div class="uk-accordion-content">
                                         <ul class="uk-list">
-                                            <li style="margin-top: -20px;">Cost: {{index $pricearray $index}}</li>
-                                            <li style="margin-bottom: 20px;">
-                                                Item ID: {{$matid}}
+                                            <li style="margin-top: -20px;">Cost: {{index $pricearray $index}}
                                             </li>
                                         </ul>
+                                        {{range $innermatindex, $matofmatid := index $.baseinfo.Matprofitmaps.Ingredients $matid}}
+                                        {{$innermaticonidarray := index $.baseinfo.Matprofitmaps.IconID $matid}}
+                                        {{$innermatnamearray := index $.baseinfo.Matprofitmaps.Names $matid}}
+                                        {{$innerpricearray := index $.baseinfo.Matprofitmaps.Costs $matid}}
+                                        <ul class="uk-list" uk-accordion="multiple: true">
+                                            <li class="uk-close" value="{{$matofmatid}}">
+                                                <a class="uk-accordion-title" href="#">
+                                                    <h5>
+                                                        <img class="itemicon"
+                                                            value="{{index $innermaticonidarray $innermatindex}}"
+                                                            uk-img>
+                                                        {{index $innermatnamearray $innermatindex}}
+                                                    </h5>
+                                                </a>
+                                                <div class="uk-accordion-content">
+                                                    <ul class="uk-list">
+                                                        <li style="margin-top: -20px;">Cost:
+                                                            {{index $innerpricearray $innermatindex}}
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </li>
+                                        </ul>
+                                        {{end}}
                                     </div>
                                 </li>
                                 {{end}}
@@ -105,6 +128,7 @@
                 getitemicon();
                 gettotalcosts();
                 changetodecimals();
+                innermaterials();
             </script>
         </div>
     </div>
