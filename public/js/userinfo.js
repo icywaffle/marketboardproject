@@ -1,7 +1,7 @@
 function userlogin() {
     var discorduniqueid = $("#id").attr("value")
     var avatarhash = $("#avatar").attr("value")
-    var path = "https://cdn.discordapp.com/avatars/" + discorduniqueid + "/" + avatarhash + ".gif"
+    var path = "https://cdn.discordapp.com/avatars/" + discorduniqueid + "/" + avatarhash
 
     var discordname = $("#username").attr("value")
     var discordtag = "#" + $("#discriminator").attr("value")
