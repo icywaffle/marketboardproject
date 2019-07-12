@@ -1,25 +1,5 @@
 {{set . "title" "UserInfo"}}
 {{template "header.html" .}}
-<section>
-    <!-- Hidden Divs with information to access -->
-    {{range $i, $values := .discordmap}}
-    <div id="{{$i}}" value="{{$values}}"></div>
-    {{end}}
-</section>
-
-
-<nav class="uk-navbar uk-navbar-container">
-    <div class="uk-navbar-left">
-        <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
-            <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
-        </a>
-    </div>
-
-    <div class="uk-navbar-right">
-        <span class="uk-margin-small-right" id="discorduser"></span>
-        <img class="uk-icon-button uk-margin-small-right" id="userimage">
-    </div>
-</nav>
 
 <div id="offcanvas-slide" uk-offcanvas>
     <div class="uk-offcanvas-bar">
@@ -35,10 +15,6 @@
 
 
 
-<script src="/public/js/obtain.js"></script>
-<script>
-    getavatar()
-</script>
 
 
 {{template "footer.html" .}}

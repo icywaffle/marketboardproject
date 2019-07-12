@@ -44,13 +44,19 @@ func (c Oauth) User() revel.Result {
 
 // Post-Authentication
 func (c Oauth) UserInfo() revel.Result {
-	// On any page, we want to see this information.
 
-	// We've stored the discord info into the session.
+	c.renderdiscorduser()
+
+	return c.RenderTemplate("Oauth/UserInfo.html")
+}
+
+// Adds discordmap to the ViewArgs
+func (c Oauth) renderdiscorduser() {
 	discorduser, _ := c.Session.Get("discordinfo")
-	// We're gonna need to cast this as a map to get our information back.
-	// However, the keys will be in JSON format.
-	discordmap, _ := discorduser.(map[string]interface{})
-
-	return c.Render(discordmap)
+	if discorduser != nil {
+		discordmap, _ := discorduser.(map[string]interface{})
+		c.ViewArgs["discordmap"] = discordmap
+	} else {
+		c.ViewArgs["discordmap"] = nil
+	}
 }

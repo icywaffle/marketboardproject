@@ -15,7 +15,7 @@ type Profits struct {
 type Matprofitmaps struct {
 	Costs       map[int][10]int  //[itemID][prices per material]
 	Ingredients map[int][]int    //[itemID][recipeIDs per material]
-	Total       map[int]int      //[itemID]totalcost
+	Total       map[int]int      //[itemID]totalcost of one item
 	Names       map[int][]string //[itemID][names per material]
 	IconID      map[int][]int    //[itemID][icondid per material]
 

@@ -12,8 +12,8 @@ type Result struct {
 }
 
 func (c Result) Index() revel.Result {
-	greetings := "Greetings Earthling"
-	return c.Render(greetings)
+	c.renderdiscorduser()
+	return c.RenderTemplate("Result/Index.html")
 }
 
 func (c Result) Obtain() revel.Result {
@@ -31,8 +31,9 @@ func (c Result) Obtain() revel.Result {
 		baseinfo = xivapi.InsertInformation(DB, recipeID)
 		Mutex.Unlock()
 	}
-
-	return c.Render(baseinfo, DiscordUser)
+	c.ViewArgs["baseinfo"] = baseinfo
+	c.renderdiscorduser()
+	return c.RenderTemplate("Result/Obtain.html")
 }
 
 func (c Result) Profit() revel.Result {
@@ -48,10 +49,26 @@ func (c Result) Profit() revel.Result {
 		}
 	}
 
-	return c.Render(profitpercentage)
+	c.renderdiscorduser()
+	c.ViewArgs["profitpercentage"] = profitpercentage
+	return c.RenderTemplate("Result/Profit.html")
 }
 
 func (c Result) Search() revel.Result {
 	recipename := c.Params.Form.Get("recipename")
-	return c.Render(recipename)
+	c.ViewArgs["recipename"] = recipename
+
+	c.renderdiscorduser()
+	return c.RenderTemplate("Result/Search.html")
+}
+
+// Adds discordmap to the ViewArgs
+func (c Result) renderdiscorduser() {
+	discorduser, _ := c.Session.Get("discordinfo")
+	if discorduser != nil {
+		discordmap, _ := discorduser.(map[string]interface{})
+		c.ViewArgs["discordmap"] = discordmap
+	} else {
+		c.ViewArgs["discordmap"] = nil
+	}
 }

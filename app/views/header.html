@@ -14,6 +14,40 @@
   <script src="/public/js/jquery-3.4.1.js"> </script>
   <!-- Web Tab Icon -->
   <link rel="shortcut icon" type="image/png" href="/public/img/favicon.png">
+  <!-- Web Login Icon-->
+  <script src="/public/js/obtain.js"></script>
+  <!-- ReactJS -->
+  <script src="https://unpkg.com/react@16/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@16/umd/react-dom.production.min.js" crossorigin></script>
+  <!-- Jquery -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body>
+
+  <!-- Discord Information -->
+  <section>
+    <!-- Hidden Divs with information to access -->
+    {{range $i, $values := .discordmap}}
+    <div id="{{$i}}" value="{{$values}}"></div>
+    {{end}}
+  </section>
+
+  <!-- Navigation -->
+
+  <nav class="uk-navbar uk-navbar-container">
+    <div class="uk-navbar-left">
+      <a class="uk-navbar-toggle" href="#offcanvas-slide" uk-toggle>
+        <span uk-navbar-toggle-icon></span> <span class="uk-margin-small-left">Menu</span>
+      </a>
+    </div>
+    <div class="uk-navbar-right">
+      <span class="uk-margin-small-right" id="discorduser"></span>
+      <img class="uk-icon-button uk-margin-small-right" id="userimage">
+    </div>
+  </nav>
+
+  <!-- Sets Discord Info at top of page-->
+  <script>
+    getavatar()
+  </script>

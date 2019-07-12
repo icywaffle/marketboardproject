@@ -1,5 +1,6 @@
 var clickedbutton = false
 
+// Changes the results into buttons and icons that will redirect to the obtain page.
 function xivapisearch() {
     var searchfor = document.getElementById("searchedname").innerHTML;
     var xivapiurl = "https://xivapi.com/search?indexes=recipe&filters=&string=" + searchfor + "&page=1"
