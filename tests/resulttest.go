@@ -17,40 +17,29 @@ type FakeCollections struct {
 }
 
 // Mock CollectionHandler Interfaces
-// These methods fill out the struct, rather than calling a database or API for information.
+
+// The find functions just simply find if it's in the database.
 func (fake FakeCollections) FindRecipesDocument(recipeID int) *models.Recipes {
 	var recipes models.Recipes
-	// Using 1, to test if the IDs are actually changing in BaseInformation
-	recipes.ID = 1
-	// Once it does change, we can pretend 1 is the result that the database doesn't have the info.
-	if recipes.ID == 1 {
-		recipes = *fake.InsertRecipesDocument(recipeID)
-	}
-
+	recipes.ID = 33180
 	return &recipes
 }
 
 func (fake FakeCollections) FindPricesDocument(itemID int) *models.Prices {
 	var prices models.Prices
-	prices.ItemID = 1
-	if prices.ItemID == 1 {
-		prices = *fake.InsertPricesDocument(itemID)
-	}
+	prices.ItemID = 24322
 	return &prices
 }
 
-func (fake FakeCollections) FindProfitsDocument(info *xivapi.Information, recipeID int) *models.Profits {
+func (fake FakeCollections) FindProfitsDocument(recipeID int) *models.Profits {
 	var profits models.Profits
-	profits.RecipeID = 1
-	if profits.RecipeID == 1 {
-		profits = *fake.InsertProfitsDocument(info, recipeID)
-	}
+	profits.RecipeID = 33180
 	return &profits
 }
 
+// These insert functions simply insert/update into the database, and return you a result.
 func (fake FakeCollections) InsertRecipesDocument(recipeID int) *models.Recipes {
 	var recipes models.Recipes
-	// Mocks a call to the API, and it should unmarshal this information.
 	recipes.ID = 33180
 	return &recipes
 }
@@ -69,7 +58,7 @@ func (fake FakeCollections) InsertProfitsDocument(info *xivapi.Information, reci
 	profits.ItemID = info.Prices.ItemID
 	return &profits
 }
-func (fake FakeCollections) FillProfitMaps(info *xivapi.Information, matprofitmaps *models.Matprofitmaps) {
+func (fake FakeCollections) FillProfitMaps(info *xivapi.Information, matprofitmaps *models.Matprofitmaps, forceupdate bool) {
 	// This mocks the recalls to the collections, and inserting it into the maps.
 	matprofitmaps.Costs[24322] = [10]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 }
@@ -130,7 +119,7 @@ func (t *ResultTest) Test_fails_if_BaseInformation_maps_are_nil() {
 
 func (t *ResultTest) Test_fails_if_InsertInformation_maps_are_nil() {
 	var testfake FakeCollections
-	info := xivapi.InsertInformation(testfake, 33180)
+	info := xivapi.InsertInformation(testfake, 33180, false)
 	testmap := make(map[int][10]int)
 	testmap[24322] = [10]int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	testinfo := xivapi.Information{

@@ -1,8 +1,10 @@
 package controllers
 
 import (
+	"fmt"
 	"marketboardproject/app/controllers/xivapi"
 	"strconv"
+	"time"
 
 	"github.com/revel/revel"
 )
@@ -28,7 +30,7 @@ func (c Result) Obtain() revel.Result {
 	// Added is based off of when the database adds it. If it's zero, then it was never in the database.
 	if baseinfo.Recipes.Added < xivapi.UpdatedRecipesStructTime || baseinfo.Profits.Added < xivapi.UpdatedProfitsStructTime || baseinfo.Prices.Added == xivapi.UpdatedPricesStructTime {
 		Mutex.Lock()
-		baseinfo = xivapi.InsertInformation(DB, recipeID)
+		baseinfo = xivapi.InsertInformation(DB, recipeID, false)
 		Mutex.Unlock()
 	}
 	c.ViewArgs["baseinfo"] = baseinfo
@@ -43,7 +45,7 @@ func (c Result) Profit() revel.Result {
 	for i := 0; i < len(profitpercentage); i++ {
 		if profitpercentage[i].Added < xivapi.UpdatedProfitsStructTime {
 			Mutex.Lock()
-			baseinfo := xivapi.InsertInformation(DB, profitpercentage[i].RecipeID)
+			baseinfo := xivapi.InsertInformation(DB, profitpercentage[i].RecipeID, false)
 			profitpercentage[i] = baseinfo.Profits
 			Mutex.Unlock()
 		}
@@ -71,4 +73,30 @@ func (c Result) renderdiscorduser() {
 	} else {
 		c.ViewArgs["discordmap"] = nil
 	}
+}
+
+// If we're calling this method, then that means we're forcibly inserting/updating the info.
+func (c Result) UpdateProfit() revel.Result {
+	recipeID, _ := strconv.Atoi(c.Params.Form.Get("updatespecificrecipe"))
+
+	// Add a cooldown to the session for a user.
+	// If they have a cooldown, skip all these.
+
+	// If we're able to see the button, it must have the recipeID in the database.
+	profitinfo := DB.FindProfitsDocument(recipeID)
+	currenttime := time.Now()
+	fmt.Println("currenttimebefore", currenttime)
+	timesinceupdate := currenttime.Unix() - profitinfo.Added
+	fmt.Println(timesinceupdate)
+	// We need to limit it to about 1 request a HALFDAY, since markets don't change much.
+	if timesinceupdate > 86400/2 {
+		Mutex.Lock()
+		xivapi.InsertInformation(DB, recipeID, true)
+		Mutex.Unlock()
+	}
+
+	// We may want to render what was updated as well.
+
+	return c.Redirect("/Profit")
+
 }

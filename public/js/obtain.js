@@ -47,7 +47,8 @@ function changeunixtodate() {
         var newtime = parseInt(unixtime.eq(i).attr("value")) * 1000
         var date = new Date(newtime)
         var days = date.getDate()
-        var months = date.getMonth()
+        // Apparently months start from zero.
+        var months = date.getMonth() + 1
         var years = date.getFullYear()
         var hours = date.getHours()
         var minutes = date.getMinutes()
@@ -63,7 +64,7 @@ function changeunixtodate() {
         if (minutes < 10) {
             minutes = "0" + minutes
         }
-        var datestring = "Added: " + days + "/" + months + "/" + years + " at " + hours + ":" + minutes + " " + ampm
+        var datestring = "Added: " + months + "/" + days + "/" + years + " at " + hours + ":" + minutes + " " + ampm
 
         unixtime.eq(i).html(datestring)
     }

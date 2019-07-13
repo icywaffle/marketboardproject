@@ -34,9 +34,8 @@ function xivapisearch() {
                     if (!clickedbutton) {
                         clickedbutton = true
                         obtainrecipe(this.value)
-                        // We should set our timeouts for 180 seconds in case for long insertions.
-                        // Also prevents our database and key being spammed on button presses.
-                        setTimeout(unlock, 180000)
+                        // We don't ever unlock the button.
+                        // So that it doesn't interrupt the current inserts and api calls.
                     }
 
                 }

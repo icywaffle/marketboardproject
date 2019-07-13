@@ -13,6 +13,11 @@
 
 </div>
 
+<!-- Submits the recipe ID to find information for obtain page -->
+<form id="obtainform" action="/Profit/Update" method="post">
+    <input id="obtaininput" type="hidden" name="updatespecificrecipe" value="33180">
+</form>
+
 
 <section>
     <div class="uk-section uk-section-default uk-background-secondary uk-light">
@@ -27,6 +32,7 @@
                     <li class="pricenumber">Total Cost : {{$itemprofit.MaterialCosts}}</li>
                     <li class="pricenumber">Lowest Market Price : {{$itemprofit.MarketboardPrice}}</li>
                     <li class="datetime" value="{{$itemprofit.Added}}"></li>
+                    <li class="itemrecipeid" id="{{$itemprofit.RecipeID}}">{{$itemprofit.RecipeID}}</li>
                 </ul>
                 {{end}}
             </ul>
@@ -49,6 +55,11 @@
     getitemicon();
     changetodecimals();
     changeunixtodate();
+</script>
+
+<script src="/public/js/profit.js" type="text/babel"></script>
+<script type="text/babel">
+    updateprofit()
 </script>
 
 

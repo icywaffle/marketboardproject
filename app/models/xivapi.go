@@ -40,7 +40,7 @@ type Prices struct {
 	ItemID     int `bson:"ItemID"`
 	Sargatanas struct {
 		History []struct {
-			Added        int  `json:"Added" bson:"Added"` // Time is in Unix epoch time
+			Added        int  `json:"Added" bson:"Added"` // XIVAPI added time
 			IsHQ         bool `json:"IsHQ" bson:"IsHQ"`
 			PricePerUnit int  `json:"PricePerUnit" bson:"PricePerUnit"`
 			PriceTotal   int  `json:"PriceTotal" bson:"PriceTotal"`
@@ -56,5 +56,5 @@ type Prices struct {
 		} `json:"Prices" bson:"Prices"`
 	} `json:"Sargatanas" bson:"Sargatanas"`
 	VendorPrice int   `json:"PriceMid" bson:"VendorPrice"`
-	Added       int64 `bson:"Added"`
+	Added       int64 `bson:"Added"` // Database added time.
 }
