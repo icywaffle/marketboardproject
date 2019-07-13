@@ -27,7 +27,7 @@ func (c Result) Obtain() revel.Result {
 	// When one person inserts a new item, the second person will still have an outdated database.
 	// This also allows multiple people to search for different items without being locked behind mutex
 	// Added is based off of when the database adds it. If it's zero, then it was never in the database.
-	if baseinfo.Recipes.Added < xivapi.UpdatedRecipesStructTime || baseinfo.Profits.Added < xivapi.UpdatedProfitsStructTime || baseinfo.Prices.Added == xivapi.UpdatedPricesStructTime {
+	if baseinfo.Recipes.Added < xivapi.UpdatedRecipesStructTime || baseinfo.Profits.Added < xivapi.UpdatedProfitsStructTime || baseinfo.Prices.Added < xivapi.UpdatedPricesStructTime {
 		Mutex.Lock()
 		baseinfo = xivapi.InsertInformation(DB, recipeID, false)
 		Mutex.Unlock()

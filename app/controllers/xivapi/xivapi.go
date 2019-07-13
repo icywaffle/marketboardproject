@@ -78,11 +78,10 @@ func (coll Collections) InsertRecipesDocument(recipeID int) *models.Recipes {
 	// Testing if there's an entry in the DB
 	filter := bson.M{"RecipeID": recipeID}
 
-	options := options.Find()
+	var options options.CountOptions
 	options.SetLimit(1)
-
-	_, err := coll.Recipes.Find(context.TODO(), filter, options)
-	if err != nil {
+	findcount, _ := coll.Recipes.CountDocuments(context.TODO(), filter, &options)
+	if findcount < 1 {
 		coll.Recipes.InsertOne(context.TODO(), result)
 		fmt.Println("Inserted Recipe into Database: ", result.ID)
 	} else {
@@ -113,11 +112,10 @@ func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
 
 	filter := bson.M{"ItemID": itemID}
 
-	options := options.Find()
+	var options options.CountOptions
 	options.SetLimit(1)
-
-	_, err := coll.Prices.Find(context.TODO(), filter, options)
-	if err != nil {
+	findcount, _ := coll.Prices.CountDocuments(context.TODO(), filter, &options)
+	if findcount < 1 {
 		coll.Prices.InsertOne(context.TODO(), result)
 		fmt.Println("Inserted Prices into Database: ", result.ItemID)
 	} else {
@@ -158,10 +156,10 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 	profits.Added = now.Unix()
 	filter := bson.M{"RecipeID": recipeID}
 
-	options := options.Find()
+	var options options.CountOptions
 	options.SetLimit(1)
-	_, err := coll.Profits.Find(context.TODO(), filter, options)
-	if err != nil {
+	findcount, _ := coll.Profits.CountDocuments(context.TODO(), filter, &options)
+	if findcount < 1 {
 		coll.Profits.InsertOne(context.TODO(), profits)
 		fmt.Println("Inserted Profits into Database: ", profits.RecipeID)
 	} else {
@@ -330,13 +328,21 @@ func InsertInformation(collections CollectionHandler, recipeID int, forceupdate 
 
 	// This is redefined in case someone else had force updated prior to the Mutex Lock of another.
 	currenttime := time.Now()
-	timesinceupdate := currenttime.Unix() - info.Profits.Added
-	fmt.Println("Currenttime after", currenttime)
-	fmt.Println(timesinceupdate, "second")
-	if timesinceupdate > 86400/2 {
-		forceupdate = true
+	profitstimesinceupdate := currenttime.Unix() - info.Profits.Added
+
+	forceupdateprofits := false
+	if profitstimesinceupdate > 86400/2 && forceupdate == false {
+		forceupdateprofits = true
 	} else {
-		forceupdate = false
+		forceupdateprofits = false
+	}
+	// We have to separate the two otherwise we'll update prices needlessly.
+	pricestimesinceupdate := currenttime.Unix() - info.Prices.Added
+	forceupdateprices := false
+	if pricestimesinceupdate > 86400/2 && forceupdate == false {
+		forceupdateprices = true
+	} else {
+		forceupdateprices = false
 	}
 
 	// If we're missing anything that wasn't in the database,
@@ -346,11 +352,11 @@ func InsertInformation(collections CollectionHandler, recipeID int, forceupdate 
 	}
 
 	// We only need to force update the prices and profit calculations afterwards.
-	if result.Prices.Added < UpdatedPricesStructTime || forceupdate == true {
+	if result.Prices.Added < UpdatedPricesStructTime || forceupdateprices == true {
 		result.Prices = collections.InsertPricesDocument(result.Recipes.ItemResultTargetID)
 	}
 
-	if result.Profits.Added < UpdatedProfitsStructTime || forceupdate == true {
+	if result.Profits.Added < UpdatedProfitsStructTime || forceupdateprofits == true {
 		// We need to re-initialize our maps
 		var matprofitmaps models.Matprofitmaps
 		matprofitmaps.Costs = make(map[int][10]int)
