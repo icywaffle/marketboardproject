@@ -175,7 +175,7 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 // This recursive function, calls through the materials of materials etc, and fills a map up.
 // Will force update the inner materials if called
 // A better way may be to recursively call BaseInformation() or InsertInformation() instead.
-func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps, forceupdate bool) {
+func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps, forcepricesupdate bool) {
 
 	// Price array, will allow us to take the price of crafting a material,
 	// only if the material is craftable.
@@ -186,7 +186,7 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 		if info.Recipes.IngredientID[i] != 0 {
 			var matpriceinfo models.Prices
 			matpriceinfo = *coll.FindPricesDocument(info.Recipes.IngredientID[i])
-			if matpriceinfo.ItemID == 0 || forceupdate == true {
+			if matpriceinfo.ItemID == 0 || forcepricesupdate == true {
 				coll.InsertPricesDocument(info.Recipes.IngredientID[i])
 			}
 			// We need to also deal with vendor prices, since they won't have market prices.
@@ -220,11 +220,11 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 			// And this will allow us to get information about mats of mats etc.
 			var matinfo Information
 			matinfo.Recipes = coll.FindRecipesDocument(info.Recipes.IngredientRecipes[i][0])
-			if matinfo.Recipes.ID == 0 || forceupdate == true {
+			if matinfo.Recipes.ID == 0 || forcepricesupdate == true {
 				coll.InsertRecipesDocument(info.Recipes.IngredientRecipes[i][0])
 			}
 			// We can then use this new material information, to fill the maps some more.
-			coll.FillProfitMaps(&matinfo, matprofitmaps, forceupdate)
+			coll.FillProfitMaps(&matinfo, matprofitmaps, forcepricesupdate)
 		}
 	}
 
@@ -323,15 +323,13 @@ func ProfitInformation(profit ProfitHandler) []*models.Profits {
 func InsertInformation(collections CollectionHandler, recipeID int, forceupdate bool) *Information {
 	// This is recalled in case someone else had added prior to the Mutex Lock.
 	info := BaseInformation(collections, recipeID)
-	var result Information
-	result = *info
 
 	// This is redefined in case someone else had force updated prior to the Mutex Lock of another.
 	currenttime := time.Now()
 	profitstimesinceupdate := currenttime.Unix() - info.Profits.Added
 
 	forceupdateprofits := false
-	if profitstimesinceupdate > 86400/2 && forceupdate == false {
+	if profitstimesinceupdate > 86400/2 && forceupdate == true {
 		forceupdateprofits = true
 	} else {
 		forceupdateprofits = false
@@ -339,7 +337,7 @@ func InsertInformation(collections CollectionHandler, recipeID int, forceupdate 
 	// We have to separate the two otherwise we'll update prices needlessly.
 	pricestimesinceupdate := currenttime.Unix() - info.Prices.Added
 	forceupdateprices := false
-	if pricestimesinceupdate > 86400/2 && forceupdate == false {
+	if pricestimesinceupdate > 86400/2 && forceupdate == true {
 		forceupdateprices = true
 	} else {
 		forceupdateprices = false
@@ -347,16 +345,16 @@ func InsertInformation(collections CollectionHandler, recipeID int, forceupdate 
 
 	// If we're missing anything that wasn't in the database,
 	// Then we call upon the API to find these information.
-	if result.Recipes.Added < UpdatedRecipesStructTime {
-		result.Recipes = collections.InsertRecipesDocument(recipeID)
+	if info.Recipes.Added < UpdatedRecipesStructTime {
+		info.Recipes = collections.InsertRecipesDocument(recipeID)
 	}
 
 	// We only need to force update the prices and profit calculations afterwards.
-	if result.Prices.Added < UpdatedPricesStructTime || forceupdateprices == true {
-		result.Prices = collections.InsertPricesDocument(result.Recipes.ItemResultTargetID)
+	if info.Prices.Added < UpdatedPricesStructTime || forceupdateprices == true {
+		info.Prices = collections.InsertPricesDocument(info.Recipes.ItemResultTargetID)
 	}
 
-	if result.Profits.Added < UpdatedProfitsStructTime || forceupdateprofits == true {
+	if info.Profits.Added < UpdatedProfitsStructTime || forceupdateprofits == true {
 		// We need to re-initialize our maps
 		var matprofitmaps models.Matprofitmaps
 		matprofitmaps.Costs = make(map[int][10]int)
@@ -364,12 +362,12 @@ func InsertInformation(collections CollectionHandler, recipeID int, forceupdate 
 		matprofitmaps.Total = make(map[int]int)
 		matprofitmaps.Names = make(map[int][]string)
 		matprofitmaps.IconID = make(map[int][]int)
-		collections.FillProfitMaps(&result, &matprofitmaps, forceupdate)
-		result.Matprofitmaps = &matprofitmaps
+		collections.FillProfitMaps(info, &matprofitmaps, forceupdateprices)
+		info.Matprofitmaps = &matprofitmaps
 
-		result.Profits = collections.InsertProfitsDocument(&result, recipeID)
+		info.Profits = collections.InsertProfitsDocument(info, recipeID)
 	}
 
-	return &result
+	return info
 
 }
