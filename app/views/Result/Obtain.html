@@ -13,6 +13,11 @@
 
     </div>
 </div>
+<!-- Submits the recipe ID to find information for obtain page -->
+<form id="obtainform" action="/Profit/Update" method="post">
+    <input id="obtaininput" type="hidden" name="updatespecificrecipe" value="33180">
+    <input name="pagecheck" type="hidden" value="obtain">
+</form>
 
 <section>
     <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
@@ -29,6 +34,8 @@
                     <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
                     <li>All Sold Profit: <span class="pricenumber">{{.baseinfo.Profits.Profits}}</span></li>
                     <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}%</li>
+                    <li class="datetime" value="{{.baseinfo.Profits.Added}}"></li>
+                    <li class="itemrecipeid" id="{{$.baseinfo.Profits.RecipeID}}">{{$.baseinfo.Profits.RecipeID}}</li>
                     {{$basecostarray := index .baseinfo.Matprofitmaps.Costs .baseinfo.Recipes.ItemResultTargetID}}
                 </ul>
             </div>
@@ -128,7 +135,11 @@
                 getitemicon();
                 gettotalcosts();
                 changetodecimals();
-                innermaterials();
+                changeunixtodate();
+            </script>
+            <script src="/public/js/profit.js" type="text/babel"></script>
+            <script type="text/babel">
+                updateprofit()
             </script>
         </div>
     </div>

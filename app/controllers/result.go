@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"marketboardproject/app/controllers/xivapi"
 	"strconv"
 	"time"
@@ -20,7 +19,7 @@ func (c Result) Index() revel.Result {
 
 func (c Result) Obtain() revel.Result {
 
-	recipeID, _ := strconv.Atoi(c.Params.Form.Get("recipeID"))
+	recipeID, _ := strconv.Atoi(c.Params.Form.Get("updatespecificrecipe"))
 
 	baseinfo := xivapi.BaseInformation(DB, recipeID)
 
@@ -79,15 +78,15 @@ func (c Result) renderdiscorduser() {
 func (c Result) UpdateProfit() revel.Result {
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("updatespecificrecipe"))
 
+	pagecheck := c.Params.Form.Get("pagecheck")
+
 	// Add a cooldown to the session for a user.
 	// If they have a cooldown, skip all these.
 
 	// If we're able to see the button, it must have the recipeID in the database.
 	profitinfo := DB.FindProfitsDocument(recipeID)
 	currenttime := time.Now()
-	fmt.Println("currenttimebefore", currenttime)
 	timesinceupdate := currenttime.Unix() - profitinfo.Added
-	fmt.Println(timesinceupdate)
 	// We need to limit it to about 1 request a HALFDAY, since markets don't change much.
 	if timesinceupdate > 86400/2 {
 		Mutex.Lock()
@@ -95,8 +94,20 @@ func (c Result) UpdateProfit() revel.Result {
 		Mutex.Unlock()
 	}
 
-	// We may want to render what was updated as well.
-
-	return c.Redirect("/Profit")
+	// There are only a few pages of input that we can handle.
+	switch pagecheck {
+	case "profit":
+		{
+			return c.Redirect("/Profit")
+		}
+	case "obtain":
+		{
+			return c.Obtain()
+		}
+	default:
+		{
+			return c.Redirect("/")
+		}
+	}
 
 }
