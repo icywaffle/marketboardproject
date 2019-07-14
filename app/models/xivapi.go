@@ -22,18 +22,18 @@ type Matprofitmaps struct {
 }
 
 type Recipes struct {
-	Name               string   `bson:"Name" json:"Name"`
-	IconID             int      `bson:"IconID" json:"IconID"`
-	ItemResultTargetID int      `bson:"ItemID" json:"ItemResultTargetID"`
-	ID                 int      `bson:"RecipeID" json:"ID"`
-	CraftTypeTargetID  int      `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
-	AmountResult       int      `bson:"AmountResult" json:"AmountResult"`
-	IngredientNames    []string `bson:"IngredientNames"`
-	IngredientID       []int    `bson:"IngredientID"`
-	IngredientIconID   []int    `bson:"IngredientIconID"`
-	IngredientAmounts  []int    `bson:"IngredientAmount"`
-	IngredientRecipes  [][]int  `bson:"IngredientRecipes"`
-	Added              int64    `bson:"Added"`
+	Name               string     `bson:"Name" json:"Name"`
+	IconID             int        `bson:"IconID" json:"IconID"`
+	ItemResultTargetID int        `bson:"ItemID" json:"ItemResultTargetID"`
+	ID                 int        `bson:"RecipeID" json:"ID"`
+	CraftTypeTargetID  int        `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
+	AmountResult       int        `bson:"AmountResult" json:"AmountResult"`
+	IngredientNames    [10]string `bson:"IngredientNames"`
+	IngredientID       [10]int    `bson:"IngredientID"`
+	IngredientIconID   [10]int    `bson:"IngredientIconID"`
+	IngredientAmounts  [10]int    `bson:"IngredientAmount"`
+	IngredientRecipes  [][]int    `bson:"IngredientRecipes"`
+	Added              int64      `bson:"Added"`
 }
 
 type Prices struct {
