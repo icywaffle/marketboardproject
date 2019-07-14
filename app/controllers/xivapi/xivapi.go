@@ -263,7 +263,7 @@ func (coll Collections) findsum(info *Information, matprofitmaps *models.Matprof
 			temppricearray[i] = materialtotalprice
 		}
 
-		tiersum += temppricearray[i]
+		tiersum += temppricearray[i] * info.Recipes.IngredientAmounts[i]
 	}
 
 	return tiersum
