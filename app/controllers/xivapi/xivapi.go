@@ -28,18 +28,22 @@ type Collections struct {
 }
 
 type Information struct {
-	Recipes      *models.Recipes
-	InnerRecipes map[int]*models.Recipes // Contains the inner recipes for some key = Recipe.ID
-	Prices       *models.Prices
-	InnerPrices  map[int]*models.Prices // Contains the inner prices for some key =  Item ID
-	Profits      *models.Profits
-	InnerProfits map[int]*models.Profits // Contains the profits for the inner recipes for some key = Recipe.Id
+	Recipes *models.Recipes
+	Prices  *models.Prices
+	Profits *models.Profits
+}
+
+type InnerInformation struct {
+	Recipes      map[int]*models.Recipes      // Contains the inner recipes for some key = Recipe.ID
+	SimplePrices map[int]*models.SimplePrices // Contains the inner prices for some key =  Item ID
+	Profits      map[int]*models.Profits      // Contains the profits for the inner recipes for some key = Recipe.Id
 }
 
 type CollectionHandler interface {
 	FindRecipesDocument(recipeID int) *models.Recipes
 	FindPricesDocument(itemID int) *models.Prices
 	FindProfitsDocument(recipeID int) *models.Profits
+	SimplifyPricesDocument(recipeID int) *models.SimplePrices
 	InsertRecipesDocument(recipeID int) *models.Recipes
 	InsertPricesDocument(itemID int) *models.Prices
 	InsertProfitsDocument(profits *models.Profits)
@@ -55,10 +59,24 @@ func (coll Collections) FindRecipesDocument(recipeID int) *models.Recipes {
 	coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
 	return &result
 }
+
 func (coll Collections) FindPricesDocument(itemID int) *models.Prices {
 	filter := bson.M{"ItemID": itemID}
 	var result models.Prices
 	coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
+	return &result
+}
+
+// This puts less strain if we don't need history.
+func (coll Collections) SimplifyPricesDocument(itemID int) *models.SimplePrices {
+	filter := bson.M{"ItemID": itemID}
+	var fullprices models.Prices
+	coll.Prices.FindOne(context.TODO(), filter).Decode(&fullprices)
+	var result models.SimplePrices
+	result.ItemID = fullprices.ItemID
+	result.LowestMarketPrice = fullprices.Sargatanas.Prices[0].PricePerUnit
+	result.VendorPrice = fullprices.VendorPrice
+	result.Added = fullprices.Added
 	return &result
 }
 
@@ -202,83 +220,33 @@ func (coll Collections) ProfitDescCursor() []*models.Profits {
 
 }
 
-// Fills out information about a crafted recipe.
-func BaseInformation(collections CollectionHandler, recipeID int) *Information {
-	var info Information
-	info.Recipes = collections.FindRecipesDocument(recipeID)
+// Fills the entire map full of related recipes.
+func BaseInformation(collections CollectionHandler, recipeID int, innerinfo InnerInformation) {
 
-	info.Prices = collections.FindPricesDocument(info.Recipes.ItemResultTargetID)
+	// Adds a base recipe to the map
+	baserecipe := collections.FindRecipesDocument(recipeID)
+	innerinfo.Recipes[recipeID] = baserecipe
 
-	// Find profits will recursively call Baseinformation here.
-	info.Profits = collections.FindProfitsDocument(recipeID)
+	// Finds the prices for the base item of a recipe.
+	innerinfo.SimplePrices[baserecipe.ItemResultTargetID] = collections.SimplifyPricesDocument(baserecipe.ItemResultTargetID)
+	// Also adds all the ingredients prices of current recipe into the map.
+	for i := 0; i < len(baserecipe.IngredientID); i++ {
+		innerinfo.SimplePrices[baserecipe.IngredientID[i]] = collections.SimplifyPricesDocument(baserecipe.IngredientID[i])
+	}
 
-	return &info
+	// Recursively call using the inner recipes (if they exist), to add more recipes and prices to our map
+	for i := 0; i < len(baserecipe.IngredientRecipes); i++ {
+		if baserecipe.IngredientRecipes[i] != nil {
+			BaseInformation(collections, baserecipe.IngredientRecipes[i][0], innerinfo)
+		}
+	}
+
+	// Profits require the recipes and prices maps to be completely filled first.
+	innerinfo.Profits[recipeID] = collections.FindProfitsDocument(recipeID)
+
 }
 
 func ProfitInformation(profit ProfitHandler) []*models.Profits {
 
 	return profit.ProfitDescCursor()
-}
-
-// Checks whether the information is filled, and inserts information into the database if not.
-// Will also force insert/update if chosen to do so by boolean.
-func InsertInformation(collections CollectionHandler, info Information, recipeID int, forceupdate bool) Information {
-	// We need to pass a base info, because we have a map that needs to be filled.
-	/*
-		// This is redefined in case someone else had force updated prior to the Mutex Lock of another.
-		currenttime := time.Now()
-		profitstimesinceupdate := currenttime.Unix() - info.Profits.Added
-
-		forceupdateprofits := false
-		if profitstimesinceupdate > 86400/2 && forceupdate == true {
-			forceupdateprofits = true
-		} else {
-			forceupdateprofits = false
-		}
-		// We have to separate the two otherwise we'll update prices needlessly, in the case that we actually have no profit.
-		pricestimesinceupdate := currenttime.Unix() - info.Prices.Added
-		forceupdateprices := false
-		if pricestimesinceupdate > 86400/2 && forceupdate == true {
-			forceupdateprices = true
-		} else {
-			forceupdateprices = false
-		}
-	*/
-
-	// If Recipes.Added == 0, then it also means we need to insert into the database since we don't have it.
-	if info.Recipes.Added < UpdatedRecipesStructTime {
-		info.Recipes = collections.InsertRecipesDocument(recipeID)
-	}
-	//Recursively calling the function with inner recipes should handle all the recipes required.
-	if _, ok := info.InnerRecipes[info.Recipes.ID]; !ok {
-		info.InnerRecipes[info.Recipes.ID] = info.Recipes
-	}
-
-	// We only need to force update the prices and profit calculations afterwards.
-	if info.Prices.Added < UpdatedPricesStructTime {
-		// We need to pass all the items each recipe requires.
-		for i := 0; i < len(info.Recipes.IngredientID); i++ {
-			info.Prices = collections.InsertPricesDocument(info.Recipes.IngredientID[i])
-			if _, ok := info.InnerPrices[info.Recipes.IngredientID[i]]; !ok {
-				info.InnerPrices[info.Recipes.IngredientID[i]] = info.Prices
-			}
-		}
-
-	}
-
-	if info.Profits.Added < UpdatedProfitsStructTime {
-		// Check from info if there are Ingredient Recipes.
-		for i := 0; i < len(info.Recipes.IngredientRecipes); i++ {
-			if info.Recipes.IngredientRecipes[i] != nil {
-				// Recursively add the inner recipes and prices to the map.
-				InsertInformation(collections, info, info.Recipes.IngredientRecipes[i][0], false)
-				// Fill the profits for each item.
-				info.FillProfitsDocument(info.Recipes.IngredientRecipes[i][0])
-			}
-		}
-
-	}
-
-	return info
-
 }

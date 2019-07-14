@@ -58,3 +58,10 @@ type Prices struct {
 	VendorPrice int   `json:"PriceMid" bson:"VendorPrice"`
 	Added       int64 `bson:"Added"` // Database added time.
 }
+
+type SimplePrices struct {
+	ItemID            int
+	LowestMarketPrice int
+	VendorPrice       int
+	Added             int64
+}
