@@ -83,22 +83,28 @@
                                 {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
                                 {{$namearray := index $.baseinfo.Matprofitmaps.Names $itemID}}
                                 {{$iconarray := index $.baseinfo.Matprofitmaps.IconID $itemID}}
+                                {{$ingredientamount := index $.baseinfo.Matprofitmaps.IngredientAmounts $itemID}}
                                 <li class="uk-close" value="{{$matid}}">
                                     <a class="uk-accordion-title" href="#">
                                         <h5>
                                             <img class="itemicon" value="{{index $iconarray $index}}" uk-img>
-                                            {{index $namearray $index}}
+                                            {{index $namearray $index}} x{{index $ingredientamount $index}}
                                         </h5>
                                     </a>
                                     <div class="uk-accordion-content">
                                         <ul class="uk-list">
-                                            <li style="margin-top: -20px;">Cost: {{index $pricearray $index}}
+                                            <li class="pricenumber" style="margin-top: -20px;">Marketboard Price:
+                                                {{index $pricearray $index}}
                                             </li>
+                                            <li class="pricenumber totalcost" style="margin-bottom: 20px;"
+                                                value="{{index $.baseinfo.Matprofitmaps.Total $matid}}">Material Cost:
+                                                {{index $.baseinfo.Matprofitmaps.Total $matid}} </li>
                                         </ul>
                                         {{range $innermatindex, $matofmatid := index $.baseinfo.Matprofitmaps.Ingredients $matid}}
                                         {{$innermaticonidarray := index $.baseinfo.Matprofitmaps.IconID $matid}}
                                         {{$innermatnamearray := index $.baseinfo.Matprofitmaps.Names $matid}}
                                         {{$innerpricearray := index $.baseinfo.Matprofitmaps.Costs $matid}}
+                                        {{$inneringredientamount := index $.baseinfo.Matprofitmaps.IngredientAmounts $matid}}
                                         <ul class="uk-list" uk-accordion="multiple: true">
                                             <li class="uk-close" value="{{$matofmatid}}">
                                                 <a class="uk-accordion-title" href="#">
@@ -107,11 +113,12 @@
                                                             value="{{index $innermaticonidarray $innermatindex}}"
                                                             uk-img>
                                                         {{index $innermatnamearray $innermatindex}}
+                                                        x{{index $inneringredientamount $innermatindex}}
                                                     </h5>
                                                 </a>
                                                 <div class="uk-accordion-content">
                                                     <ul class="uk-list">
-                                                        <li style="margin-top: -20px;">Cost:
+                                                        <li style="margin-top: -20px;">Marketboard Price:
                                                             {{index $innerpricearray $innermatindex}}
                                                         </li>
                                                     </ul>

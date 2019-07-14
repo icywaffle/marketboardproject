@@ -191,7 +191,7 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 			}
 			// We need to also deal with vendor prices, since they won't have market prices.
 			if matpriceinfo.VendorPrice != 0 {
-				pricearray[i] = matpriceinfo.VendorPrice * info.Recipes.IngredientAmounts[i]
+				pricearray[i] = matpriceinfo.VendorPrice
 			} else {
 				if len(matpriceinfo.Sargatanas.Prices) > 0 {
 					pricearray[i] = matpriceinfo.Sargatanas.Prices[0].PricePerUnit
@@ -208,6 +208,7 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 		// We recursively fill the maps with a certain ItemID, with certain information.
 		// This allows us to collectively have all the inner ingredients of an item.
 		matprofitmaps.Costs[info.Recipes.ItemResultTargetID] = pricearray
+		matprofitmaps.IngredientAmounts[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientAmounts
 		matprofitmaps.Ingredients[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientID
 		matprofitmaps.Names[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientNames
 		matprofitmaps.IconID[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientIconID
@@ -233,7 +234,7 @@ func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.
 	for itemID, pricearray := range matprofitmaps.Costs {
 		var pricesum int
 		for i := 0; i < len(pricearray); i++ {
-			pricesum += pricearray[i]
+			pricesum += pricearray[i] * matprofitmaps.IngredientAmounts[itemID][i]
 		}
 		matprofitmaps.Total[itemID] = pricesum
 	}
@@ -305,6 +306,7 @@ func BaseInformation(collections CollectionHandler, recipeID int) *Information {
 	matprofitmaps.Total = make(map[int]int)
 	matprofitmaps.Names = make(map[int][]string)
 	matprofitmaps.IconID = make(map[int][]int)
+	matprofitmaps.IngredientAmounts = make(map[int][]int)
 	collections.FillProfitMaps(&info, &matprofitmaps, false)
 	info.Matprofitmaps = &matprofitmaps
 
@@ -362,6 +364,7 @@ func InsertInformation(collections CollectionHandler, recipeID int, forceupdate 
 		matprofitmaps.Total = make(map[int]int)
 		matprofitmaps.Names = make(map[int][]string)
 		matprofitmaps.IconID = make(map[int][]int)
+		matprofitmaps.IngredientAmounts = make(map[int][]int)
 		collections.FillProfitMaps(info, &matprofitmaps, forceupdateprices)
 		info.Matprofitmaps = &matprofitmaps
 
