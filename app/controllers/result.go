@@ -2,8 +2,8 @@ package controllers
 
 import (
 	"marketboardproject/app/controllers/xivapi"
+	"marketboardproject/app/models"
 	"strconv"
-	"time"
 
 	"github.com/revel/revel"
 )
@@ -20,18 +20,13 @@ func (c Result) Index() revel.Result {
 func (c Result) Obtain() revel.Result {
 
 	recipeID, _ := strconv.Atoi(c.Params.Form.Get("updatespecificrecipe"))
+	var baseinfo xivapi.Information
+	// We have to initialize the maps here, to be able to allow recursive calls.
+	baseinfo.InnerRecipes = make(map[int]*models.Recipes)           // Contains the inner recipes for some key = Recipe.ID
+	baseinfo.InnerSimplePrices = make(map[int]*models.SimplePrices) // Contains the inner prices for some key =  Item ID
+	baseinfo.InnerProfits = make(map[int]*models.Profits)           // Contains the profits for the inner recipes for some key = Recipe.Id
+	xivapi.BaseInformation(DB, recipeID, baseinfo)
 
-	baseinfo := xivapi.BaseInformation(DB, recipeID)
-
-	// We need to lock here, to prevent multiple users from updating/calling from an outdated database
-	// When one person inserts a new item, the second person will still have an outdated database.
-	// This also allows multiple people to search for different items without being locked behind mutex
-	// Added is based off of when the database adds it. If it's zero, then it was never in the database.
-	if baseinfo.Recipes.Added < xivapi.UpdatedRecipesStructTime || baseinfo.Profits.Added < xivapi.UpdatedProfitsStructTime || baseinfo.Prices.Added < xivapi.UpdatedPricesStructTime {
-		Mutex.Lock()
-		baseinfo = xivapi.InsertInformation(DB, recipeID, false)
-		Mutex.Unlock()
-	}
 	c.ViewArgs["baseinfo"] = baseinfo
 	c.renderdiscorduser()
 	return c.RenderTemplate("Result/Obtain.html")
@@ -39,16 +34,6 @@ func (c Result) Obtain() revel.Result {
 
 func (c Result) Profit() revel.Result {
 	profitpercentage := xivapi.ProfitInformation(DB)
-	// To update profits, we actually need all the previous information.
-	// And check through all the items to make sure we're updating them.
-	for i := 0; i < len(profitpercentage); i++ {
-		if profitpercentage[i].Added < xivapi.UpdatedProfitsStructTime {
-			Mutex.Lock()
-			baseinfo := xivapi.InsertInformation(DB, profitpercentage[i].RecipeID, false)
-			profitpercentage[i] = baseinfo.Profits
-			Mutex.Unlock()
-		}
-	}
 
 	c.renderdiscorduser()
 	c.ViewArgs["profitpercentage"] = profitpercentage
@@ -72,42 +57,4 @@ func (c Result) renderdiscorduser() {
 	} else {
 		c.ViewArgs["discordmap"] = nil
 	}
-}
-
-// If we're calling this method, then that means we're forcibly inserting/updating the info.
-func (c Result) UpdateProfit() revel.Result {
-	recipeID, _ := strconv.Atoi(c.Params.Form.Get("updatespecificrecipe"))
-
-	pagecheck := c.Params.Form.Get("pagecheck")
-
-	// Add a cooldown to the session for a user.
-	// If they have a cooldown, skip all these.
-
-	// If we're able to see the button, it must have the recipeID in the database.
-	profitinfo := DB.FindProfitsDocument(recipeID)
-	currenttime := time.Now()
-	timesinceupdate := currenttime.Unix() - profitinfo.Added
-	// We need to limit it to about 1 request a HALFDAY, since markets don't change much.
-	if timesinceupdate > 86400/2 {
-		Mutex.Lock()
-		xivapi.InsertInformation(DB, recipeID, true)
-		Mutex.Unlock()
-	}
-
-	// There are only a few pages of input that we can handle.
-	switch pagecheck {
-	case "profit":
-		{
-			return c.Redirect("/Profit")
-		}
-	case "obtain":
-		{
-			return c.Obtain()
-		}
-	default:
-		{
-			return c.Redirect("/")
-		}
-	}
-
 }
