@@ -13,136 +13,146 @@
 
     </div>
 </div>
-<!-- Submits the recipe ID to find information for obtain page -->
-<form id="obtainform" action="/Profit/Update" method="post">
-    <input id="obtaininput" type="hidden" name="updatespecificrecipe" value="33180">
-    <input name="pagecheck" type="hidden" value="obtain">
-</form>
 
+<!-- Base Info, so that you don't have to memorize
+
+type Information struct {
+	Recipes *models.Recipes
+	Prices  *models.SimplePrices
+	Profits *models.Profits
+	*InnerInformation
+}
+
+type InnerInformation struct {
+	InnerRecipes      map[int]*models.Recipes      // Contains the inner recipes for some key = Recipe.ID
+	InnerSimplePrices map[int]*models.SimplePrices // Contains the inner prices for some key =  Item ID
+	InnerProfits      map[int]*models.Profits      // Contains the profits for the inner recipes for some key = Recipe.Id
+}
+
+****Note that these are maps that we can access objects from below.
+
+type Profits struct {
+	RecipeID         int     `bson:"RecipeID"`
+	ItemID           int     `bson:"ItemID"`
+	OnMarketboard    bool    `bson:"OnMarketboard"`
+	MaterialCosts    int     `bson:"MaterialCosts"`
+	Profits          int     `bson:"Profits"`
+	ProfitPercentage float32 `bson:"ProfitPercentage"`
+	Added            int64   `bson:"Added"`
+}
+
+type Recipes struct {
+	Name               string  `bson:"Name" json:"Name"`
+	IconID             int     `bson:"IconID" json:"IconID"`
+	ItemResultTargetID int     `bson:"ItemID" json:"ItemResultTargetID"`
+	ID                 int     `bson:"RecipeID" json:"ID"`
+	CraftTypeTargetID  int     `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
+	AmountResult       int     `bson:"AmountResult" json:"AmountResult"`
+	IngredientID       [10]int `bson:"IngredientID"`
+	IngredientAmounts  [10]int `bson:"IngredientAmount"`
+	IngredientRecipes  [][]int `bson:"IngredientRecipes"`
+	Added              int64   `bson:"Added"`
+}
+
+
+type SimplePrices struct {
+	ItemID            int
+	HistoryPrice      int
+	LowestMarketPrice int
+	OnMarketboard     bool
+	Added             int64
+}
+
+-->
+
+<!-- Main Recipe Analysis-->
 <section>
     <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
-                <h1>{{.DiscordUser.UniqueID}}</h1>
                 <h2>Analysis</h2>
                 <h4><img class="itemicon" value="{{.baseinfo.Recipes.IconID}}" uk-img> {{.baseinfo.Recipes.Name}}</h4>
                 <ul class="uk-list">
-                    <li>Marketboard Price: <span class="pricenumber">{{.baseinfo.Profits.MarketboardPrice}}</span></li>
+                    <li>On Market: {{.baseinfo.Prices.OnMarketboard}}</li>
+                    <li>Marketboard Price: <span class="pricenumber">{{.baseinfo.Prices.LowestMarketPrice}}</span>
+                    </li>
                     <li>
                         Material Costs: <span class="pricenumber">{{.baseinfo.Profits.MaterialCosts}}</span>
                     </li>
-                    <li>Amount Result from RecipeID: {{.baseinfo.Recipes.AmountResult}}</li>
-                    <li>All Sold Profit: <span class="pricenumber">{{.baseinfo.Profits.Profits}}</span></li>
+                    <li>
+                        Profits: <span class="pricenumber">{{.baseinfo.Profits.Profits}}</span>
+                    </li>
                     <li>Profit Percentage: {{.baseinfo.Profits.ProfitPercentage}}%</li>
-                    <li class="datetime" value="{{.baseinfo.Profits.Added}}"></li>
-                    <li class="itemrecipeid" id="{{$.baseinfo.Profits.RecipeID}}">{{$.baseinfo.Profits.RecipeID}}</li>
-                    {{$basecostarray := index .baseinfo.Matprofitmaps.Costs .baseinfo.Recipes.ItemResultTargetID}}
+                    <li class="datetime" value="{{.baseinfo.Profits.Added}}"> </li>
                 </ul>
             </div>
         </div>
     </div>
 </section>
+<!-- Materials -->
 <section>
-    <div class="uk-section uk-section-muted uk-animation-slide-left">
+    <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
-                <h3>Materials</h3>
-                <ul class="uk-list" id="mainrecipelist" uk-accordion="multiple: true">
-                    {{range $itemindex, $itemID := .baseinfo.Recipes.IngredientID}}
-                    {{$itemarray := index $.baseinfo.Matprofitmaps.Ingredients $itemID}}
-                    <li class="uk-close" value="{{$itemID}}">
-                        <a class="uk-accordion-title" href="#">
-                            <h4>
-                                <img class="itemicon" value="{{index $.baseinfo.Recipes.IngredientIconID $itemindex}}"
-                                    uk-img>
-                                {{index $.baseinfo.Recipes.IngredientNames $itemindex}}
-                                <span class="itemamount"
-                                    value="{{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}">
-                                    x{{index $.baseinfo.Recipes.IngredientAmounts $itemindex}}</span>
-                            </h4>
-                        </a>
-                        <div class=" uk-accordion-content">
-                            <ul class="uk-list" id="materialinfo">
-                                <li class="pricenumber" style="margin-top: -20px;">Marketboard Price:
-                                    {{index $basecostarray $itemindex}}</li>
-                                <li class="pricenumber" value="{{index $.baseinfo.Matprofitmaps.Total $itemID}}">
-                                    Material Cost for One:
-                                    {{index $.baseinfo.Matprofitmaps.Total $itemID}}
-                                </li>
-                                <li class="pricenumber totalcost"
-                                    value="{{index $.baseinfo.Matprofitmaps.Total $itemID}}">
-                                    Total Cost:
-                                </li>
-                                <li>Item ID: {{$itemID}}</li>
-                            </ul>
-
-
-                            <ul class="uk-list" id="materiallist" uk-accordion="multiple: true"
-                                style="margin-top: 20px;">
-                                {{range $index, $matid := $itemarray}}
-                                {{$pricearray := index $.baseinfo.Matprofitmaps.Costs $itemID}}
-                                {{$namearray := index $.baseinfo.Matprofitmaps.Names $itemID}}
-                                {{$iconarray := index $.baseinfo.Matprofitmaps.IconID $itemID}}
-                                <li class="uk-close" value="{{$matid}}">
-                                    <a class="uk-accordion-title" href="#">
-                                        <h5>
-                                            <img class="itemicon" value="{{index $iconarray $index}}" uk-img>
-                                            {{index $namearray $index}}
-                                        </h5>
-                                    </a>
-                                    <div class="uk-accordion-content">
-                                        <ul class="uk-list">
-                                            <li style="margin-top: -20px;">Cost: {{index $pricearray $index}}
-                                            </li>
-                                        </ul>
-                                        {{range $innermatindex, $matofmatid := index $.baseinfo.Matprofitmaps.Ingredients $matid}}
-                                        {{$innermaticonidarray := index $.baseinfo.Matprofitmaps.IconID $matid}}
-                                        {{$innermatnamearray := index $.baseinfo.Matprofitmaps.Names $matid}}
-                                        {{$innerpricearray := index $.baseinfo.Matprofitmaps.Costs $matid}}
-                                        <ul class="uk-list" uk-accordion="multiple: true">
-                                            <li class="uk-close" value="{{$matofmatid}}">
-                                                <a class="uk-accordion-title" href="#">
-                                                    <h5>
-                                                        <img class="itemicon"
-                                                            value="{{index $innermaticonidarray $innermatindex}}"
-                                                            uk-img>
-                                                        {{index $innermatnamearray $innermatindex}}
-                                                    </h5>
-                                                </a>
-                                                <div class="uk-accordion-content">
-                                                    <ul class="uk-list">
-                                                        <li style="margin-top: -20px;">Cost:
-                                                            {{index $innerpricearray $innermatindex}}
-                                                        </li>
-                                                    </ul>
-                                                </div>
-                                            </li>
-                                        </ul>
-                                        {{end}}
-                                    </div>
-                                </li>
-                                {{end}}
-                            </ul>
-                        </div>
-                    </li>
+                <h2>Materials</h2>
+                <ul class="uk-list">
+                    {{range $ingredientindex, $IngredientID := .baseinfo.Recipes.IngredientID}}
+                    <h4><img class="itemicon" value="{{index $.baseinfo.Recipes.IngredientIconID $ingredientindex}}"
+                            uk-img>
+                        {{index $.baseinfo.Recipes.IngredientNames $ingredientindex}}</h4>
                     {{end}}
                 </ul>
             </div>
-            <!-- Removes the Empty Material information -->
-            <script src="/public/js/obtain.js"></script>
-            <script>
-                removeemptymaterials();
-                getitemicon();
-                gettotalcosts();
-                changetodecimals();
-                changeunixtodate();
-            </script>
-            <script src="/public/js/profit.js" type="text/babel"></script>
-            <script type="text/babel">
-                updateprofit()
-            </script>
         </div>
     </div>
 </section>
+
+<!-- Materials that have Recipes -->
+<section>
+    <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
+        <div class="uk-container">
+            <div class="uk-width-4-5 uk-float-right">
+                <h2>All Inner Recipes</h2>
+                <ul class="uk-list">
+                    <!-- Obtains Ingredient Recipes for the base ingredient. -->
+                    {{range $indexofbaseingredient,$ingredientrecipeidarray := .baseinfo.Recipes.IngredientRecipes}}
+                    <!-- Ranges through the array of recipes for one ingredient -->
+                    {{range $indexofrecipe, $ingredientrecipeid := $ingredientrecipeidarray}}
+                    <li>
+                        {{$innerrecipes := index $.innerinfo.Recipes $ingredientrecipeid}}
+                        {{$innerprofits := index $.innerinfo.Profits $ingredientrecipeid}}
+                        {{$innerprices := index $.innerinfo.Prices $innerrecipes.ItemResultTargetID}}
+                        <!-- Inner Recipe Analysis -->
+                        <h4><img class="itemicon" value="{{$innerrecipes.IconID}}" uk-img> {{$innerrecipes.Name}}
+                        </h4>
+                        <ul class="uk-list">
+                            <li>On Market: {{$innerprices.OnMarketboard}}</li>
+                            <li>Marketboard Price: <span class="pricenumber">{{$innerprices.LowestMarketPrice}}</span>
+                            </li>
+                            <li>
+                                Material Costs: <span class="pricenumber">{{$innerprofits.MaterialCosts}}</span>
+                            </li>
+                            <li>
+                                Profits: <span class="pricenumber">{{$innerprofits.Profits}}</span>
+                            </li>
+                            <li>Profit Percentage: {{$innerprofits.ProfitPercentage}}%</li>
+                            <li class="datetime" value="{{$innerprofits.Added}}"> </li>
+                        </ul>
+                    </li>
+                    {{end}}
+                    {{end}}
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<script src="/public/js/obtain.js"></script>
+<script>
+    getitemicon();
+    changetodecimals();
+    changeunixtodate();
+</script>
 
 {{template "footer.html" .}}

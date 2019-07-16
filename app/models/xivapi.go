@@ -3,7 +3,6 @@ package models
 type Profits struct {
 	RecipeID         int     `bson:"RecipeID"`
 	ItemID           int     `bson:"ItemID"`
-	OnMarketboard    bool    `bson:"OnMarketboard"`
 	MaterialCosts    int     `bson:"MaterialCosts"`
 	Profits          int     `bson:"Profits"`
 	ProfitPercentage float32 `bson:"ProfitPercentage"`
@@ -11,16 +10,18 @@ type Profits struct {
 }
 
 type Recipes struct {
-	Name               string  `bson:"Name" json:"Name"`
-	IconID             int     `bson:"IconID" json:"IconID"`
-	ItemResultTargetID int     `bson:"ItemID" json:"ItemResultTargetID"`
-	ID                 int     `bson:"RecipeID" json:"ID"`
-	CraftTypeTargetID  int     `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
-	AmountResult       int     `bson:"AmountResult" json:"AmountResult"`
-	IngredientID       [10]int `bson:"IngredientID"`
-	IngredientAmounts  [10]int `bson:"IngredientAmount"`
-	IngredientRecipes  [][]int `bson:"IngredientRecipes"`
-	Added              int64   `bson:"Added"`
+	Name               string     `bson:"Name" json:"Name"`
+	IconID             int        `bson:"IconID" json:"IconID"`
+	ItemResultTargetID int        `bson:"ItemID" json:"ItemResultTargetID"`
+	ID                 int        `bson:"RecipeID" json:"ID"`
+	CraftTypeTargetID  int        `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
+	AmountResult       int        `bson:"AmountResult" json:"AmountResult"`
+	IngredientID       [10]int    `bson:"IngredientID"`
+	IngredientIconID   [10]int    `bson:"IngredientIconID"`
+	IngredientNames    [10]string `bson:"IngredientNames"`
+	IngredientAmounts  [10]int    `bson:"IngredientAmount"`
+	IngredientRecipes  [][]int    `bson:"IngredientRecipes"`
+	Added              int64      `bson:"Added"`
 }
 
 type Prices struct {

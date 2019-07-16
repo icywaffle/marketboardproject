@@ -199,6 +199,28 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 		matitemID.ItemIngredient8.ID,
 		matitemID.ItemIngredient9.ID}
 
+	matitemnameslice := [10]string{matitemID.ItemIngredient0.Name,
+		matitemID.ItemIngredient1.Name,
+		matitemID.ItemIngredient2.Name,
+		matitemID.ItemIngredient3.Name,
+		matitemID.ItemIngredient4.Name,
+		matitemID.ItemIngredient5.Name,
+		matitemID.ItemIngredient6.Name,
+		matitemID.ItemIngredient7.Name,
+		matitemID.ItemIngredient8.Name,
+		matitemID.ItemIngredient9.Name}
+
+	matitemiconslice := [10]int{matitemID.ItemIngredient0.IconID,
+		matitemID.ItemIngredient1.IconID,
+		matitemID.ItemIngredient2.IconID,
+		matitemID.ItemIngredient3.IconID,
+		matitemID.ItemIngredient4.IconID,
+		matitemID.ItemIngredient5.IconID,
+		matitemID.ItemIngredient6.IconID,
+		matitemID.ItemIngredient7.IconID,
+		matitemID.ItemIngredient8.IconID,
+		matitemID.ItemIngredient9.IconID}
+
 	// We need to go through every single possible recipe that can make this item.
 	var matrecipeID IngredientRecipe
 	json.Unmarshal(byteValue, &matrecipeID)
@@ -239,6 +261,8 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 
 	// These are custom things that we can add to the Recipes documents
 	recipes.IngredientID = matitemIDslice
+	recipes.IngredientIconID = matitemiconslice
+	recipes.IngredientNames = matitemnameslice
 	recipes.IngredientAmounts = amountslice
 	recipes.IngredientRecipes = matrecipeIDslice
 	return recipes
