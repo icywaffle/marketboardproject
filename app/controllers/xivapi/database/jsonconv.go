@@ -116,13 +116,27 @@ type IngredientRecipe struct {
 	} `json:"ItemIngredientRecipe9"`
 }
 
+type xivapierror struct {
+	Error bool `json:"Error"`
+}
+
 // idtype should be "recipe", "item", or "market/item"
+// Will return nil if we get an error response.
 func ApiConnect(inputid int, idtype string) []byte {
 	// MAX Rate limit is 30 Req/s -> 0.033s/Req. It's safer to use something
 	time.Sleep(45 * time.Millisecond)
 	byteValue := xivapiconnector(websiteurl(inputid, idtype))
 	fmt.Println("Connected to API")
-	return byteValue
+
+	// Handles invalid json responses.
+	var apierror xivapierror
+	json.Unmarshal(byteValue, &apierror)
+	if apierror.Error {
+		return nil
+	} else {
+		return byteValue
+	}
+
 }
 
 func websiteurl(userID int, idtype string) string {

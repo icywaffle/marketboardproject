@@ -110,62 +110,72 @@ func (coll Collections) FindProfitsDocument(recipeID int) (*models.Profits, bool
 // Will insert a document, or update it if it's already in the collection.
 func (coll Collections) InsertRecipesDocument(recipeID int) *models.Recipes {
 	byteValue := database.ApiConnect(recipeID, "recipe")
-	result := database.Jsonitemrecipe(byteValue)
-	// These variables are not in the json file.
-	now := time.Now()
-	result.Added = now.Unix()
-	// Testing if there's an entry in the DB
-	filter := bson.M{"RecipeID": recipeID}
+	// We don't want to be inserting nil values into our database.
+	if byteValue != nil {
+		result := database.Jsonitemrecipe(byteValue)
+		// These variables are not in the json file.
+		now := time.Now()
+		result.Added = now.Unix()
+		// Testing if there's an entry in the DB
+		filter := bson.M{"RecipeID": recipeID}
 
-	var options options.CountOptions
-	options.SetLimit(1)
-	findcount, _ := coll.Recipes.CountDocuments(context.TODO(), filter, &options)
-	if findcount < 1 {
-		coll.Recipes.InsertOne(context.TODO(), result)
-		fmt.Println("Inserted Recipe into Database: ", result.ID)
+		var options options.CountOptions
+		options.SetLimit(1)
+		findcount, _ := coll.Recipes.CountDocuments(context.TODO(), filter, &options)
+		if findcount < 1 {
+			coll.Recipes.InsertOne(context.TODO(), result)
+			fmt.Println("Inserted Recipe into Database: ", result.ID)
+		} else {
+			coll.Recipes.UpdateOne(context.TODO(), filter, bson.D{
+				{Key: "$set", Value: result},
+			})
+			fmt.Println("Updated Item into Recipe Collection :", result.ID)
+		}
+
+		return &result
 	} else {
-		coll.Recipes.UpdateOne(context.TODO(), filter, bson.D{
-			{Key: "$set", Value: result},
-		})
-		fmt.Println("Updated Item into Recipe Collection :", result.ID)
+		return nil
 	}
 
-	return &result
 }
 
 func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
 	byteValue := database.ApiConnect(itemID, "market/item")
-	result := database.Jsonprices(byteValue)
-	// ItemID is not part of the Json file.
-	result.ItemID = itemID
+	if byteValue != nil {
+		result := database.Jsonprices(byteValue)
+		// ItemID is not part of the Json file.
+		result.ItemID = itemID
 
-	// If we do have an empty result, it means it's not on the board.
-	// XIVAPI may change this though.
-	if result.ItemID != 0 && len(result.Sargatanas.Prices) != 0 {
-		result.OnMarketboard = true
-	} else {
-		result.OnMarketboard = false
+		// If we do have an empty result, it means it's not on the board.
+		// XIVAPI may change this though.
+		if result.ItemID != 0 && len(result.Sargatanas.Prices) != 0 {
+			result.OnMarketboard = true
+		} else {
+			result.OnMarketboard = false
+		}
+		//These variables are not in the json file.
+		now := time.Now()
+		result.Added = now.Unix()
+
+		filter := bson.M{"ItemID": itemID}
+
+		var options options.CountOptions
+		options.SetLimit(1)
+		findcount, _ := coll.Prices.CountDocuments(context.TODO(), filter, &options)
+		if findcount < 1 {
+			coll.Prices.InsertOne(context.TODO(), result)
+			fmt.Println("Inserted Prices into Database: ", result.ItemID)
+		} else {
+			coll.Prices.UpdateOne(context.TODO(), filter, bson.D{
+				{Key: "$set", Value: result},
+			})
+			fmt.Println("Updated Item into Prices Collection :", result.ItemID)
+		}
+
+		return &result
 	}
-	//These variables are not in the json file.
-	now := time.Now()
-	result.Added = now.Unix()
+	return nil
 
-	filter := bson.M{"ItemID": itemID}
-
-	var options options.CountOptions
-	options.SetLimit(1)
-	findcount, _ := coll.Prices.CountDocuments(context.TODO(), filter, &options)
-	if findcount < 1 {
-		coll.Prices.InsertOne(context.TODO(), result)
-		fmt.Println("Inserted Prices into Database: ", result.ItemID)
-	} else {
-		coll.Prices.UpdateOne(context.TODO(), filter, bson.D{
-			{Key: "$set", Value: result},
-		})
-		fmt.Println("Updated Item into Prices Collection :", result.ItemID)
-	}
-
-	return &result
 }
 
 // Uses the Recipes and Prices from Information, and returns a Profit model.
