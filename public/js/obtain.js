@@ -70,3 +70,11 @@ function changeunixtodate() {
     }
 }
 
+function removeduplicaterecipe() {
+    // Luckily the element that is duplicate is always the last one.
+    var innerrecipelist = document.getElementsByClassName("innerrecipelist")
+    var length = innerrecipelist.length
+
+    innerrecipelist.item(length - 1).remove()
+
+}

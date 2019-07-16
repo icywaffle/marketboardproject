@@ -16,6 +16,7 @@
 
 <!-- Base Info, so that you don't have to memorize
 
+baseinfo
 type Information struct {
 	Recipes *models.Recipes
 	Prices  *models.SimplePrices
@@ -23,10 +24,11 @@ type Information struct {
 	*InnerInformation
 }
 
+innerinfo
 type InnerInformation struct {
-	InnerRecipes      map[int]*models.Recipes      // Contains the inner recipes for some key = Recipe.ID
-	InnerSimplePrices map[int]*models.SimplePrices // Contains the inner prices for some key =  Item ID
-	InnerProfits      map[int]*models.Profits      // Contains the profits for the inner recipes for some key = Recipe.Id
+    Recipes      map[int]*models.Recipes      // Contains the inner recipes for some key = Recipe.ID
+	Prices map[int]*models.SimplePrices // Contains the inner prices for some key =  Item ID
+	Profits      map[int]*models.Profits      // Contains the profits for the inner recipes for some key = Recipe.Id
 }
 
 ****Note that these are maps that we can access objects from below.
@@ -74,7 +76,7 @@ type SimplePrices struct {
                 <h4><img class="itemicon" value="{{.baseinfo.Recipes.IconID}}" uk-img> {{.baseinfo.Recipes.Name}}</h4>
                 <ul class="uk-list">
                     <li>On Market: {{.baseinfo.Prices.OnMarketboard}}</li>
-                    <li>Marketboard Price: <span class="pricenumber">{{.baseinfo.Prices.LowestMarketPrice}}</span>
+                    <li>Marketboard Price: <span class=" pricenumber">{{.baseinfo.Prices.LowestMarketPrice}}</span>
                     </li>
                     <li>
                         Material Costs: <span class="pricenumber">{{.baseinfo.Profits.MaterialCosts}}</span>
@@ -95,11 +97,41 @@ type SimplePrices struct {
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
                 <h2>Materials</h2>
-                <ul class="uk-list">
+                <!-- List of Materials -->
+                <ul class="uk-list" uk-accordion="multiple: true">
                     {{range $ingredientindex, $IngredientID := .baseinfo.Recipes.IngredientID}}
-                    <h4><img class="itemicon" value="{{index $.baseinfo.Recipes.IngredientIconID $ingredientindex}}"
-                            uk-img>
-                        {{index $.baseinfo.Recipes.IngredientNames $ingredientindex}}</h4>
+                    {{$innermatprices := index $.innerinfo.Prices $IngredientID}}
+                    <!-- This If statement checks if the prices exist for the information inside the map -->
+                    {{if $innermatprices}}
+                    <!-- Material List of Information -->
+
+                    <li>
+                        <a class="uk-accordion-title" href="#">
+                            <img class=" itemicon"
+                                value="{{index $.baseinfo.Recipes.IngredientIconID $ingredientindex}}" uk-img>
+                            <span>{{index $.baseinfo.Recipes.IngredientNames $ingredientindex}}</span>
+                            <span class="uk-text-meta">
+                                x{{index $.baseinfo.Recipes.IngredientAmounts $ingredientindex}}</span>
+
+                        </a>
+                        <div class="uk-accordion-content">
+                            <ul class="uk-list">
+
+                                <li>
+                                    Lowest Market Price :
+                                    <span class="pricenumber">{{$innermatprices.LowestMarketPrice}}</span>
+                                </li>
+                                <li>
+                                    On Marketboard : {{$innermatprices.OnMarketboard}}
+                                </li>
+                                <li style="margin-bottom:30px;">
+                                    Added : <span class="datetime" value="{{$innermatprices.Added}}"></span>
+                                </li>
+
+                            </ul>
+                        </div>
+                    </li>
+                    {{end}}
                     {{end}}
                 </ul>
             </div>
@@ -108,38 +140,46 @@ type SimplePrices struct {
 </section>
 
 <!-- Materials that have Recipes -->
+<!-- Use javascript here to move these information to the above information -->
+<!-- Also remove the base recipe from this list because it's redundant-->
 <section>
     <div class="uk-section uk-background-secondary uk-animation-slide-left uk-light">
         <div class="uk-container">
             <div class="uk-width-4-5 uk-float-right">
                 <h2>All Inner Recipes</h2>
-                <ul class="uk-list">
-                    <!-- Obtains Ingredient Recipes for the base ingredient. -->
-                    {{range $indexofbaseingredient,$ingredientrecipeidarray := .baseinfo.Recipes.IngredientRecipes}}
-                    <!-- Ranges through the array of recipes for one ingredient -->
-                    {{range $indexofrecipe, $ingredientrecipeid := $ingredientrecipeidarray}}
-                    <li>
-                        {{$innerrecipes := index $.innerinfo.Recipes $ingredientrecipeid}}
-                        {{$innerprofits := index $.innerinfo.Profits $ingredientrecipeid}}
-                        {{$innerprices := index $.innerinfo.Prices $innerrecipes.ItemResultTargetID}}
-                        <!-- Inner Recipe Analysis -->
-                        <h4><img class="itemicon" value="{{$innerrecipes.IconID}}" uk-img> {{$innerrecipes.Name}}
-                        </h4>
-                        <ul class="uk-list">
-                            <li>On Market: {{$innerprices.OnMarketboard}}</li>
-                            <li>Marketboard Price: <span class="pricenumber">{{$innerprices.LowestMarketPrice}}</span>
-                            </li>
-                            <li>
-                                Material Costs: <span class="pricenumber">{{$innerprofits.MaterialCosts}}</span>
-                            </li>
-                            <li>
-                                Profits: <span class="pricenumber">{{$innerprofits.Profits}}</span>
-                            </li>
-                            <li>Profit Percentage: {{$innerprofits.ProfitPercentage}}%</li>
-                            <li class="datetime" value="{{$innerprofits.Added}}"> </li>
-                        </ul>
+                <ul class="uk-list" uk-accordion="multiple: true">
+                    <!-- Ranges through all innerrecipes -->
+                    {{range $innerrecipeid,$innerrecipesdoc := .innerinfo.Recipes}}
+                    {{$innerpricesdoc := index $.innerinfo.Prices $innerrecipesdoc.ItemResultTargetID}}
+                    {{$innerprofitsdoc := index $.innerinfo.Profits $innerrecipeid}}
+                    <li class="innerrecipelist" value="{{$innerrecipesdoc.ID}}">
+                        <!-- Use javascript to change crafttypeid to actual crafters -->
+                        <a class=" uk-accordion-title" href="#">
+                            <h4><img class="itemicon" value="{{$innerrecipesdoc.IconID}}" uk-img>
+                                <span class="crafttypeid" value="{{$innerrecipesdoc.CraftTypeTargetID}}"></span>
+                                <span>x{{$innerrecipesdoc.RecipeLevelTable.Stars}} Stars</span>
+                            </h4>
+                        </a>
+                        <div class="uk-accordion-content">
+                            <!-- Inner Recipe Analysis -->
+                            <ul class="uk-list">
+                                <li>Crafter Level: {{$innerrecipesdoc.RecipeLevelTable.ClassJobLevel}}</li>
+                                <li>On Market: {{$innerpricesdoc.OnMarketboard}}</li>
+                                <li>Marketboard Price: <span
+                                        class="pricenumber">{{$innerpricesdoc.LowestMarketPrice}}</span>
+                                </li>
+                                <li>
+                                    Material Costs: <span class="pricenumber">{{$innerprofitsdoc.MaterialCosts}}</span>
+                                </li>
+                                <li>
+                                    Profits: <span class="pricenumber">{{$innerprofitsdoc.Profits}}</span>
+                                </li>
+                                <li>Profit Percentage: {{$innerprofitsdoc.ProfitPercentage}}%</li>
+                                <li class="datetime" value="{{$innerprofitsdoc.Added}}" style="margin-bottom:30px;">
+                                </li>
+                            </ul>
+                        </div>
                     </li>
-                    {{end}}
                     {{end}}
                 </ul>
             </div>
@@ -153,6 +193,11 @@ type SimplePrices struct {
     getitemicon();
     changetodecimals();
     changeunixtodate();
+    removeduplicaterecipe()
 </script>
 
+<script src="/public/js/profit.js" type="text/babel"></script>
+<script type="text/babel">
+    crafttypeid()
+</script>
 {{template "footer.html" .}}

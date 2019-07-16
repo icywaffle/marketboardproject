@@ -18,9 +18,9 @@ import (
 // We want to separate the times, just in case we only update one struct.
 // Changing these times will allow us to just update our entries accordingly if the
 // structs have been changed.
-var UpdatedRecipesStructTime = int64(1563242554) // Last Update : 7/15/19 - 7:02PM
+var UpdatedRecipesStructTime = int64(1563260451) // Last Update : 7/16/19 - 12:01AM
 var UpdatedPricesStructTime = int64(1563240349)  // Last Update : 7/15/19 - 6:26PM
-var UpdatedProfitsStructTime = int64(1563242554) // Last Update : 7/15/19 - 7:02PM
+var UpdatedProfitsStructTime = int64(1563261129) // Last Update : 7/16/19 - 12:12AM
 
 // We don't want users to create a new mutex every time.
 var Mutex sync.Mutex
@@ -179,6 +179,14 @@ func FillProfitsDocument(recipeID int, info InnerInformation) *models.Profits {
 	profits.RecipeID = recipeID
 	profits.ItemID = recipedoc.ItemResultTargetID
 
+	// Since we already have the recipe at hand, might as well append it to the profits information
+	// This allows to reduce the amount of calls to the database when clicking on profits page.
+	profits.Name = recipedoc.Name
+	profits.IconID = recipedoc.IconID
+	profits.CraftTypeTargetID = recipedoc.CraftTypeTargetID
+	profits.RecipeLevelTable.ClassJobLevel = recipedoc.RecipeLevelTable.ClassJobLevel
+	profits.RecipeLevelTable.Stars = recipedoc.RecipeLevelTable.Stars
+
 	var materialcost int
 	for i := 0; i < len(recipedoc.IngredientID); i++ {
 		if recipedoc.IngredientID[i] != 0 {
@@ -188,8 +196,17 @@ func FillProfitsDocument(recipeID int, info InnerInformation) *models.Profits {
 				materialcost += innerpricedoc.LowestMarketPrice * recipedoc.IngredientAmounts[i]
 			} else {
 				// If we do have recipes, it should already be defined in the map.
-				// For now, we'll do calculations based off of the first one that appears.
-				innerprofitdoc := info.Profits[recipedoc.IngredientRecipes[i][0]]
+				// For now, we'll do calculations based off of the lowest one
+				var innerprofitdoc *models.Profits
+				var lowestmaterialcost int
+				for j := 0; j < len(recipedoc.IngredientRecipes[i]); j++ {
+					tempinnerprofitdoc := info.Profits[recipedoc.IngredientRecipes[i][j]]
+					// If lowestmaterialcost is zero, it must mean that we haven't initialized it witha price yet.
+					if lowestmaterialcost == 0 || tempinnerprofitdoc.MaterialCosts < lowestmaterialcost {
+						innerprofitdoc = info.Profits[recipedoc.IngredientRecipes[i][j]]
+					}
+				}
+
 				materialcost += innerprofitdoc.MaterialCosts * recipedoc.IngredientAmounts[i]
 			}
 		}
@@ -331,6 +348,7 @@ func BaseInformation(collections CollectionHandler, recipeID int, info InnerInfo
 		baseprofit, indatabase = collections.FindProfitsDocument(recipeID)
 		if !indatabase || baseprofit.Added < UpdatedProfitsStructTime {
 			baseprofit = FillProfitsDocument(recipeID, info)
+			collections.InsertProfitsDocument(baseprofit)
 		}
 		Mutex.Unlock()
 	}
