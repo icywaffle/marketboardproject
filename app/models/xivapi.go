@@ -1,39 +1,40 @@
 package models
 
 type Profits struct {
-	Name             string  `bson:"Name"`
-	ItemID           int     `bson:"ItemID"`
 	RecipeID         int     `bson:"RecipeID"`
-	IconID           int     `bson:"IconID"`
-	MarketboardPrice int     `bson:"MarketboardPrice"`
+	ItemID           int     `bson:"ItemID"`
 	MaterialCosts    int     `bson:"MaterialCosts"`
 	Profits          int     `bson:"Profits"`
 	ProfitPercentage float32 `bson:"ProfitPercentage"`
 	Added            int64   `bson:"Added"`
-}
-
-type Matprofitmaps struct {
-	Costs             map[int][10]int  //[itemID][prices per material]
-	Ingredients       map[int][]int    //[itemID][recipeIDs per material]
-	Total             map[int]int      //[itemID]totalcost of one item
-	Names             map[int][]string //[itemID][names per material]
-	IconID            map[int][]int    //[itemID][icondid per material]
-	IngredientAmounts map[int][]int    //[itemID][amounts per material]
+	// These are for the profits page.
+	// No need to recall Recipes for this.
+	Name              string `bson:"Name"`
+	IconID            int    `bson:"IconID"`
+	CraftTypeTargetID int    `bson:"CraftTypeTargetID"`
+	RecipeLevelTable  struct {
+		ClassJobLevel int `bson:"ClassJobLevel"`
+		Stars         int `bson:"Stars"`
+	} `bson:"RecipeLevelTable"`
 }
 
 type Recipes struct {
-	Name               string   `bson:"Name" json:"Name"`
-	IconID             int      `bson:"IconID" json:"IconID"`
-	ItemResultTargetID int      `bson:"ItemID" json:"ItemResultTargetID"`
-	ID                 int      `bson:"RecipeID" json:"ID"`
-	CraftTypeTargetID  int      `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
-	AmountResult       int      `bson:"AmountResult" json:"AmountResult"`
-	IngredientNames    []string `bson:"IngredientNames"`
-	IngredientID       []int    `bson:"IngredientID"`
-	IngredientIconID   []int    `bson:"IngredientIconID"`
-	IngredientAmounts  []int    `bson:"IngredientAmount"`
-	IngredientRecipes  [][]int  `bson:"IngredientRecipes"`
-	Added              int64    `bson:"Added"`
+	Name               string `bson:"Name" json:"Name"`
+	IconID             int    `bson:"IconID" json:"IconID"`
+	ItemResultTargetID int    `bson:"ItemID" json:"ItemResultTargetID"`
+	ID                 int    `bson:"RecipeID" json:"ID"`
+	CraftTypeTargetID  int    `bson:"CraftTypeTargetID" json:"CraftTypeTargetID"`
+	RecipeLevelTable   struct {
+		ClassJobLevel int `bson:"ClassJobLevel" json:"ClassJobLevel"`
+		Stars         int `bson:"Stars" json:"Stars"`
+	} `bson:"RecipeLevelTable" json:"RecipeLevelTable"`
+	AmountResult      int        `bson:"AmountResult" json:"AmountResult"`
+	IngredientID      [10]int    `bson:"IngredientID"`
+	IngredientIconID  [10]int    `bson:"IngredientIconID"`
+	IngredientNames   [10]string `bson:"IngredientNames"`
+	IngredientAmounts [10]int    `bson:"IngredientAmount"`
+	IngredientRecipes [][]int    `bson:"IngredientRecipes"`
+	Added             int64      `bson:"Added"`
 }
 
 type Prices struct {
@@ -55,6 +56,14 @@ type Prices struct {
 			Quantity     int  `json:"Quantity" bson:"Quantity"`
 		} `json:"Prices" bson:"Prices"`
 	} `json:"Sargatanas" bson:"Sargatanas"`
-	VendorPrice int   `json:"PriceMid" bson:"VendorPrice"`
-	Added       int64 `bson:"Added"` // Database added time.
+	OnMarketboard bool  `bson:"OnMarketboard"`
+	Added         int64 `bson:"Added"` // Database added time.
+}
+
+type SimplePrices struct {
+	ItemID            int
+	HistoryPrice      int
+	LowestMarketPrice int
+	OnMarketboard     bool
+	Added             int64
 }

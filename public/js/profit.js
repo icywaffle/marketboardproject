@@ -48,3 +48,37 @@ function obtainrecipe(recipeid) {
 function unlock() {
     clickedbutton = false
 }
+
+function crafttypeid() {
+    var crafttypeid = document.getElementsByClassName("crafttypeid")
+    for (var i = 0; i < crafttypeid.length; i++) {
+        var idvalue = crafttypeid.item(i).getAttribute("value")
+
+        switch (parseInt(idvalue)) {
+            case 0:
+                crafttypeid.item(i).innerHTML = "Woodworking"
+                break
+            case 1:
+                crafttypeid.item(i).innerHTML = "Smithing"
+                break
+            case 2:
+                crafttypeid.item(i).innerHTML = "Armorcraft"
+                break
+            case 3:
+                crafttypeid.item(i).innerHTML = "Goldsmithing"
+                break
+            case 4:
+                crafttypeid.item(i).innerHTML = "Leatherworking"
+                break
+            case 5:
+                crafttypeid.item(i).innerHTML = "Clothcraft"
+                break
+            case 6:
+                crafttypeid.item(i).innerHTML = "Alchemy"
+                break
+            case 7:
+                crafttypeid.item(i).innerHTML = "Cooking"
+        }
+    }
+}
+

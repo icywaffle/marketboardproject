@@ -177,7 +177,7 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 	json.Unmarshal(byteValue, &matitemID)
 
 	// Create the slices
-	amountslice := []int{amount.AmountIngredient0,
+	amountslice := [10]int{amount.AmountIngredient0,
 		amount.AmountIngredient1,
 		amount.AmountIngredient2,
 		amount.AmountIngredient3,
@@ -188,18 +188,7 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 		amount.AmountIngredient8,
 		amount.AmountIngredient9}
 
-	matitemnameslice := []string{matitemID.ItemIngredient0.Name,
-		matitemID.ItemIngredient1.Name,
-		matitemID.ItemIngredient2.Name,
-		matitemID.ItemIngredient3.Name,
-		matitemID.ItemIngredient4.Name,
-		matitemID.ItemIngredient5.Name,
-		matitemID.ItemIngredient6.Name,
-		matitemID.ItemIngredient7.Name,
-		matitemID.ItemIngredient8.Name,
-		matitemID.ItemIngredient9.Name}
-
-	matitemIDslice := []int{matitemID.ItemIngredient0.ID,
+	matitemIDslice := [10]int{matitemID.ItemIngredient0.ID,
 		matitemID.ItemIngredient1.ID,
 		matitemID.ItemIngredient2.ID,
 		matitemID.ItemIngredient3.ID,
@@ -210,7 +199,18 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 		matitemID.ItemIngredient8.ID,
 		matitemID.ItemIngredient9.ID}
 
-	matitemiconslice := []int{matitemID.ItemIngredient0.IconID,
+	matitemnameslice := [10]string{matitemID.ItemIngredient0.Name,
+		matitemID.ItemIngredient1.Name,
+		matitemID.ItemIngredient2.Name,
+		matitemID.ItemIngredient3.Name,
+		matitemID.ItemIngredient4.Name,
+		matitemID.ItemIngredient5.Name,
+		matitemID.ItemIngredient6.Name,
+		matitemID.ItemIngredient7.Name,
+		matitemID.ItemIngredient8.Name,
+		matitemID.ItemIngredient9.Name}
+
+	matitemiconslice := [10]int{matitemID.ItemIngredient0.IconID,
 		matitemID.ItemIngredient1.IconID,
 		matitemID.ItemIngredient2.IconID,
 		matitemID.ItemIngredient3.IconID,
@@ -260,9 +260,9 @@ func Jsonitemrecipe(byteValue []byte) models.Recipes {
 	}
 
 	// These are custom things that we can add to the Recipes documents
-	recipes.IngredientNames = matitemnameslice
 	recipes.IngredientID = matitemIDslice
 	recipes.IngredientIconID = matitemiconslice
+	recipes.IngredientNames = matitemnameslice
 	recipes.IngredientAmounts = amountslice
 	recipes.IngredientRecipes = matrecipeIDslice
 	return recipes

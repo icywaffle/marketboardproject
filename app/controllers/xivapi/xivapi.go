@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"sync"
 	"time"
 
 	"marketboardproject/app/controllers/xivapi/database"
@@ -17,9 +18,12 @@ import (
 // We want to separate the times, just in case we only update one struct.
 // Changing these times will allow us to just update our entries accordingly if the
 // structs have been changed.
-var UpdatedRecipesStructTime = int64(1561573454) // Last Update : 6/26/19 - 11AM
-var UpdatedPricesStructTime = int64(1561493761)
-var UpdatedProfitsStructTime = int64(1562657644) // Last Update : 7/9/19 - 9PM
+var UpdatedRecipesStructTime = int64(1563260451) // Last Update : 7/16/19 - 12:01AM
+var UpdatedPricesStructTime = int64(1563240349)  // Last Update : 7/15/19 - 6:26PM
+var UpdatedProfitsStructTime = int64(1563261129) // Last Update : 7/16/19 - 12:12AM
+
+// We don't want users to create a new mutex every time.
+var Mutex sync.Mutex
 
 type Collections struct {
 	Prices  *mongo.Collection
@@ -28,44 +32,79 @@ type Collections struct {
 }
 
 type Information struct {
-	Recipes       *models.Recipes
-	Prices        *models.Prices
-	Profits       *models.Profits
-	Matprofitmaps *models.Matprofitmaps
+	Recipes *models.Recipes
+	Prices  *models.SimplePrices
+	Profits *models.Profits
+}
+
+type InnerInformation struct {
+	Recipes map[int]*models.Recipes      // Contains the inner recipes for some key = Recipe.ID
+	Prices  map[int]*models.SimplePrices // Contains the inner prices for some key =  Item ID
+	Profits map[int]*models.Profits      // Contains the profits for the inner recipes for some key = Recipe.Id
 }
 
 type CollectionHandler interface {
-	FindRecipesDocument(recipeID int) *models.Recipes
-	FindPricesDocument(itemID int) *models.Prices
-	FindProfitsDocument(recipeID int) *models.Profits
+	FindRecipesDocument(recipeID int) (*models.Recipes, bool)
+	FindPricesDocument(itemID int) (*models.Prices, bool)
+	FindProfitsDocument(recipeID int) (*models.Profits, bool)
+	SimplifyPricesDocument(recipeID int) (*models.SimplePrices, bool)
 	InsertRecipesDocument(recipeID int) *models.Recipes
 	InsertPricesDocument(itemID int) *models.Prices
-	InsertProfitsDocument(info *Information, recipeID int) *models.Profits
-	FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps, forceupdate bool)
+	InsertProfitsDocument(profits *models.Profits)
 }
 
 type ProfitHandler interface {
 	ProfitDescCursor() []*models.Profits
 }
 
-func (coll Collections) FindRecipesDocument(recipeID int) *models.Recipes {
+// Will return false if there's no recipe in the database.
+func (coll Collections) FindRecipesDocument(recipeID int) (*models.Recipes, bool) {
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Recipes
-	coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
-	return &result
-}
-func (coll Collections) FindPricesDocument(itemID int) *models.Prices {
-	filter := bson.M{"ItemID": itemID}
-	var result models.Prices
-	coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
-	return &result
+	err := coll.Recipes.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		return nil, false
+	}
+	return &result, true
 }
 
-func (coll Collections) FindProfitsDocument(recipeID int) *models.Profits {
+func (coll Collections) FindPricesDocument(itemID int) (*models.Prices, bool) {
+	filter := bson.M{"ItemID": itemID}
+	var result models.Prices
+	err := coll.Prices.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		return nil, false
+	}
+	return &result, true
+}
+
+// This is used for quick and easy prices
+func (coll Collections) SimplifyPricesDocument(itemID int) (*models.SimplePrices, bool) {
+	filter := bson.M{"ItemID": itemID}
+	var fullprices models.Prices
+	err := coll.Prices.FindOne(context.TODO(), filter).Decode(&fullprices)
+	if err != nil {
+		return nil, false
+	}
+	// We should only just copy the value so that the fullprices will disappear
+	var result models.SimplePrices
+	result.ItemID = fullprices.ItemID
+	result.HistoryPrice = fullprices.Sargatanas.History[0].PricePerUnit
+	result.LowestMarketPrice = fullprices.Sargatanas.Prices[0].PricePerUnit
+	result.OnMarketboard = fullprices.OnMarketboard
+	result.Added = fullprices.Added
+	return &result, true
+}
+
+// This is used for stronger analysis functions, where we want to see trends etc.
+func (coll Collections) FindProfitsDocument(recipeID int) (*models.Profits, bool) {
 	filter := bson.M{"RecipeID": recipeID}
 	var result models.Profits
-	coll.Profits.FindOne(context.TODO(), filter).Decode(&result)
-	return &result
+	err := coll.Profits.FindOne(context.TODO(), filter).Decode(&result)
+	if err != nil {
+		return nil, false
+	}
+	return &result, true
 }
 
 // Will insert a document, or update it if it's already in the collection.
@@ -99,12 +138,13 @@ func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
 	result := database.Jsonprices(byteValue)
 	// ItemID is not part of the Json file.
 	result.ItemID = itemID
-	// If we do have an empty result, it means that we need to search for the vendor prices.
-	if result.ItemID != 0 && len(result.Sargatanas.Prices) == 0 {
-		byteValue = database.ApiConnect(result.ItemID, "item")
-		result = database.Jsonprices(byteValue)
-		// We have to rewrite the Item ID into this
-		result.ItemID = itemID
+
+	// If we do have an empty result, it means it's not on the board.
+	// XIVAPI may change this though.
+	if result.ItemID != 0 && len(result.Sargatanas.Prices) != 0 {
+		result.OnMarketboard = true
+	} else {
+		result.OnMarketboard = false
 	}
 	//These variables are not in the json file.
 	now := time.Now()
@@ -128,33 +168,74 @@ func (coll Collections) InsertPricesDocument(itemID int) *models.Prices {
 	return &result
 }
 
-// Creates and then inserts the profits document
-func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *models.Profits {
+// Uses the Recipes and Prices from Information, and returns a Profit model.
+// Will require profits from the map if the recipe depends on recipes.
+func FillProfitsDocument(recipeID int, info InnerInformation) *models.Profits {
 	var profits models.Profits
-	profits.Name = info.Recipes.Name
-	profits.IconID = info.Recipes.IconID
-	profits.ItemID = info.Recipes.ItemResultTargetID
-	profits.RecipeID = info.Recipes.ID
 
-	// Some items won't have a market history, because they're from vendors.
-	var itempriceperunit int
-	if info.Prices.VendorPrice != 0 {
-		itempriceperunit = info.Prices.VendorPrice
-	} else {
-		itempriceperunit = info.Prices.Sargatanas.Prices[0].PricePerUnit
+	recipedoc := info.Recipes[recipeID]
+	pricesdoc := info.Prices[recipedoc.ItemResultTargetID]
+
+	profits.RecipeID = recipeID
+	profits.ItemID = recipedoc.ItemResultTargetID
+
+	// Since we already have the recipe at hand, might as well append it to the profits information
+	// This allows to reduce the amount of calls to the database when clicking on profits page.
+	profits.Name = recipedoc.Name
+	profits.IconID = recipedoc.IconID
+	profits.CraftTypeTargetID = recipedoc.CraftTypeTargetID
+	profits.RecipeLevelTable.ClassJobLevel = recipedoc.RecipeLevelTable.ClassJobLevel
+	profits.RecipeLevelTable.Stars = recipedoc.RecipeLevelTable.Stars
+
+	var materialcost int
+	for i := 0; i < len(recipedoc.IngredientID); i++ {
+		if recipedoc.IngredientID[i] != 0 {
+			// The top of the stack should have no ingredient recipes.
+			if recipedoc.IngredientRecipes[i] == nil {
+				innerpricedoc := info.Prices[recipedoc.IngredientID[i]]
+				materialcost += innerpricedoc.LowestMarketPrice * recipedoc.IngredientAmounts[i]
+			} else {
+				// If we do have recipes, it should already be defined in the map.
+				// For now, we'll do calculations based off of the lowest one
+				var innerprofitdoc *models.Profits
+				var lowestmaterialcost int
+				for j := 0; j < len(recipedoc.IngredientRecipes[i]); j++ {
+					tempinnerprofitdoc := info.Profits[recipedoc.IngredientRecipes[i][j]]
+					// If lowestmaterialcost is zero, it must mean that we haven't initialized it witha price yet.
+					if lowestmaterialcost == 0 || tempinnerprofitdoc.MaterialCosts < lowestmaterialcost {
+						innerprofitdoc = info.Profits[recipedoc.IngredientRecipes[i][j]]
+					}
+				}
+
+				materialcost += innerprofitdoc.MaterialCosts * recipedoc.IngredientAmounts[i]
+			}
+		}
 	}
-	profits.MarketboardPrice = itempriceperunit
+	profits.MaterialCosts = materialcost
 
-	materialcosts := coll.findsum(info, info.Matprofitmaps)
-	profits.MaterialCosts = materialcosts
-	// We may get multiple items per craft.
-	profits.Profits = itempriceperunit*info.Recipes.AmountResult - materialcosts
-	profitmaterialratio := (float64(profits.Profits) / float64(materialcosts)) //0.01
-	profits.ProfitPercentage = float32(math.Ceil(profitmaterialratio*10000) / 100)
+	if pricesdoc.OnMarketboard {
+		profits.Profits = pricesdoc.LowestMarketPrice - materialcost
+	} else {
+		profits.Profits = pricesdoc.HistoryPrice - materialcost
+	}
+
+	// Our profit depends on how much money we've spent going into it.
+	// Division := 0.1234321
+	// Fourinteger := 1234 (Rounded The Final Digit)
+	// Profit Percentage := 12.34%
+	fourinteger := math.Round(float64(profits.Profits) / float64(materialcost) * 10000)
+	profits.ProfitPercentage = float32(fourinteger / 100)
 
 	now := time.Now()
-	profits.Added = now.Unix()
-	filter := bson.M{"RecipeID": recipeID}
+	unixtimenow := now.Unix()
+
+	profits.Added = unixtimenow
+
+	return &profits
+
+}
+func (coll Collections) InsertProfitsDocument(profits *models.Profits) {
+	filter := bson.M{"RecipeID": profits.RecipeID}
 
 	var options options.CountOptions
 	options.SetLimit(1)
@@ -168,106 +249,6 @@ func (coll Collections) InsertProfitsDocument(info *Information, recipeID int) *
 		})
 		fmt.Println("Updated Item into Profit Collection :", profits.RecipeID)
 	}
-	return &profits
-
-}
-
-// This recursive function, calls through the materials of materials etc, and fills a map up.
-// Will force update the inner materials if called
-// A better way may be to recursively call BaseInformation() or InsertInformation() instead.
-func (coll Collections) FillProfitMaps(info *Information, matprofitmaps *models.Matprofitmaps, forcepricesupdate bool) {
-
-	// Price array, will allow us to take the price of crafting a material,
-	// only if the material is craftable.
-	var pricearray [10]int
-	// We need to search through the base materials
-	for i := 0; i < len(info.Recipes.IngredientID); i++ {
-		// Zero is an invalid material ID
-		if info.Recipes.IngredientID[i] != 0 {
-			var matpriceinfo models.Prices
-			matpriceinfo = *coll.FindPricesDocument(info.Recipes.IngredientID[i])
-			if matpriceinfo.ItemID == 0 || forcepricesupdate == true {
-				coll.InsertPricesDocument(info.Recipes.IngredientID[i])
-			}
-			// We need to also deal with vendor prices, since they won't have market prices.
-			if matpriceinfo.VendorPrice != 0 {
-				pricearray[i] = matpriceinfo.VendorPrice
-			} else {
-				if len(matpriceinfo.Sargatanas.Prices) > 0 {
-					pricearray[i] = matpriceinfo.Sargatanas.Prices[0].PricePerUnit
-				} else {
-					// If the market's empty, there's no available price for it.
-					// This is something we have to integrate in the future.
-					pricearray[i] = 0
-				}
-			}
-		} else {
-			// Zero should be skipped, since it's not a valid item.
-			continue
-		}
-		// We recursively fill the maps with a certain ItemID, with certain information.
-		// This allows us to collectively have all the inner ingredients of an item.
-		matprofitmaps.Costs[info.Recipes.ItemResultTargetID] = pricearray
-		matprofitmaps.IngredientAmounts[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientAmounts
-		matprofitmaps.Ingredients[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientID
-		matprofitmaps.Names[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientNames
-		matprofitmaps.IconID[info.Recipes.ItemResultTargetID] = info.Recipes.IngredientIconID
-	}
-
-	// If there's a recipe for a material, we want to go in one more materialprices, and keep appending to it.
-	for i := 0; i < len(info.Recipes.IngredientRecipes); i++ {
-		if len(info.Recipes.IngredientRecipes[i]) != 0 {
-			// Creating this matinfo allows us to recursively call and create new instances
-			// And this will allow us to get information about mats of mats etc.
-			var matinfo Information
-			matinfo.Recipes = coll.FindRecipesDocument(info.Recipes.IngredientRecipes[i][0])
-			if matinfo.Recipes.ID == 0 || forcepricesupdate == true {
-				coll.InsertRecipesDocument(info.Recipes.IngredientRecipes[i][0])
-			}
-			// We can then use this new material information, to fill the maps some more.
-			coll.FillProfitMaps(&matinfo, matprofitmaps, forcepricesupdate)
-		}
-	}
-
-	// Then we can finally fill the maps, once we've finished looping through the
-	// materials with recipes.
-	for itemID, pricearray := range matprofitmaps.Costs {
-		var pricesum int
-		for i := 0; i < len(pricearray); i++ {
-			pricesum += pricearray[i] * matprofitmaps.IngredientAmounts[itemID][i]
-		}
-		matprofitmaps.Total[itemID] = pricesum
-	}
-
-}
-func (coll Collections) findsum(info *Information, matprofitmaps *models.Matprofitmaps) int {
-
-	var tiersum int
-
-	// Some materials are base items, so these base items won't have a map key for prices.
-	temppricearray := matprofitmaps.Costs[info.Recipes.ItemResultTargetID]
-	for i := 0; i < len(info.Recipes.IngredientID); i++ {
-		materialtotalprice, ok := matprofitmaps.Total[info.Recipes.IngredientID[i]]
-		if ok {
-			// If a material also has a recipe, then we want to recursively call for it's material prices.
-			_, innerrecipe := matprofitmaps.Ingredients[info.Recipes.IngredientID[i]]
-			if innerrecipe {
-				var materialinfo Information
-				// We're going to need to find the information about the inner materials.
-				// For now, we will deal with just the first recipe.
-				materialinfo.Recipes = coll.FindRecipesDocument(info.Recipes.IngredientRecipes[i][0])
-				materialinfo.Prices = coll.FindPricesDocument(info.Recipes.IngredientID[i])
-				// We we need to redefine the materialtotalprice with the one that is found by looking at the prices of the materials within the materials.
-				// We also need to pass the main maps, to fill it up.
-				materialtotalprice = coll.findsum(&materialinfo, matprofitmaps)
-			}
-			temppricearray[i] = materialtotalprice
-		}
-
-		tiersum += temppricearray[i] * info.Recipes.IngredientAmounts[i]
-	}
-
-	return tiersum
 }
 
 // Gives a Descending Sorted Array, of 20 items with the most profit from the DB
@@ -292,85 +273,88 @@ func (coll Collections) ProfitDescCursor() []*models.Profits {
 
 }
 
-// Fills out information about a crafted recipe.
-func BaseInformation(collections CollectionHandler, recipeID int) *Information {
-	var info Information
-	info.Recipes = collections.FindRecipesDocument(recipeID)
+// Uses recursion to fill the Information maps and inner information.
+// A recipe w/ len(IngredientRecipes) = 0, should be at the top of the stack.
+// Will handle if there are no items in the database.
+// Will also handle struct updates, if you've updated the struct times ontop of xivapi.go.
+func BaseInformation(collections CollectionHandler, recipeID int, info InnerInformation) {
 
-	info.Prices = collections.FindPricesDocument(info.Recipes.ItemResultTargetID)
+	// Adds a base recipe to the map
+	baserecipe, indatabase := collections.FindRecipesDocument(recipeID)
 
-	// We need to initialize our maps
-	var matprofitmaps models.Matprofitmaps
-	matprofitmaps.Costs = make(map[int][10]int)
-	matprofitmaps.Ingredients = make(map[int][]int)
-	matprofitmaps.Total = make(map[int]int)
-	matprofitmaps.Names = make(map[int][]string)
-	matprofitmaps.IconID = make(map[int][]int)
-	matprofitmaps.IngredientAmounts = make(map[int][]int)
-	collections.FillProfitMaps(&info, &matprofitmaps, false)
-	info.Matprofitmaps = &matprofitmaps
+	// People can skip the locks if they don't need to insert. (They've already found a document in the database)
+	if !indatabase || baserecipe.Added < UpdatedRecipesStructTime {
+		Mutex.Lock()
+		// Force a recheck for those threads that were waiting on another that was already inserting the same information.
+		baserecipe, indatabase = collections.FindRecipesDocument(recipeID)
+		if !indatabase || baserecipe.Added < UpdatedRecipesStructTime {
+			baserecipe = collections.InsertRecipesDocument(recipeID)
+		}
+		Mutex.Unlock()
+	}
+	info.Recipes[recipeID] = baserecipe
 
-	info.Profits = collections.FindProfitsDocument(recipeID)
+	// Finds the prices for the base item of a recipe.
+	info.Prices[baserecipe.ItemResultTargetID], indatabase = collections.SimplifyPricesDocument(baserecipe.ItemResultTargetID)
 
-	return &info
+	if !indatabase || info.Prices[baserecipe.ItemResultTargetID].Added < UpdatedPricesStructTime {
+		Mutex.Lock()
+		info.Prices[baserecipe.ItemResultTargetID], indatabase = collections.SimplifyPricesDocument(baserecipe.ItemResultTargetID)
+		if !indatabase || info.Prices[baserecipe.ItemResultTargetID].Added < UpdatedPricesStructTime {
+			// It means that the prices are actually not in the database, so we just need to find them.
+			collections.InsertPricesDocument(baserecipe.ItemResultTargetID)
+			// This also means that we can simplify it.
+			info.Prices[baserecipe.ItemResultTargetID], _ = collections.SimplifyPricesDocument(baserecipe.ItemResultTargetID)
+		}
+		Mutex.Unlock()
+	}
+
+	// Also adds all the ingredients prices of current recipe into the map.
+	for i := 0; i < len(baserecipe.IngredientID); i++ {
+		// Zero are invalid ingredients.
+		if baserecipe.IngredientID[i] != 0 {
+			info.Prices[baserecipe.IngredientID[i]], indatabase = collections.SimplifyPricesDocument(baserecipe.IngredientID[i])
+
+			if !indatabase || info.Prices[baserecipe.IngredientID[i]].Added < UpdatedPricesStructTime {
+				Mutex.Lock()
+				info.Prices[baserecipe.IngredientID[i]], indatabase = collections.SimplifyPricesDocument(baserecipe.IngredientID[i])
+				if !indatabase || info.Prices[baserecipe.IngredientID[i]].Added < UpdatedPricesStructTime {
+					collections.InsertPricesDocument(baserecipe.IngredientID[i])
+					info.Prices[baserecipe.IngredientID[i]], _ = collections.SimplifyPricesDocument(baserecipe.IngredientID[i])
+				}
+				Mutex.Unlock()
+			}
+
+		}
+
+	}
+
+	// Recursively call using the inner recipes (if they exist), to add more recipes and prices to our map
+	for i := 0; i < len(baserecipe.IngredientRecipes); i++ {
+		if baserecipe.IngredientRecipes[i] != nil {
+			// Adds all the recipes to the map.
+			for j := 0; j < len(baserecipe.IngredientRecipes[i]); j++ {
+				BaseInformation(collections, baserecipe.IngredientRecipes[i][j], info)
+			}
+
+		}
+	}
+
+	// All of our recipes are in the stack. The top of the stack will reach here first and fill our profitmaps.
+	baseprofit, indatabase := collections.FindProfitsDocument(recipeID)
+	if !indatabase || baseprofit.Added < UpdatedProfitsStructTime {
+		Mutex.Lock()
+		baseprofit, indatabase = collections.FindProfitsDocument(recipeID)
+		if !indatabase || baseprofit.Added < UpdatedProfitsStructTime {
+			baseprofit = FillProfitsDocument(recipeID, info)
+			collections.InsertProfitsDocument(baseprofit)
+		}
+		Mutex.Unlock()
+	}
+	info.Profits[recipeID] = baseprofit
 }
 
 func ProfitInformation(profit ProfitHandler) []*models.Profits {
 
 	return profit.ProfitDescCursor()
-}
-
-// Checks whether the information is filled, and inserts information into the database if not.
-// Will also force insert/update if chosen to do so by boolean.
-func InsertInformation(collections CollectionHandler, recipeID int, forceupdate bool) *Information {
-	// This is recalled in case someone else had added prior to the Mutex Lock.
-	info := BaseInformation(collections, recipeID)
-
-	// This is redefined in case someone else had force updated prior to the Mutex Lock of another.
-	currenttime := time.Now()
-	profitstimesinceupdate := currenttime.Unix() - info.Profits.Added
-
-	forceupdateprofits := false
-	if profitstimesinceupdate > 86400/2 && forceupdate == true {
-		forceupdateprofits = true
-	} else {
-		forceupdateprofits = false
-	}
-	// We have to separate the two otherwise we'll update prices needlessly.
-	pricestimesinceupdate := currenttime.Unix() - info.Prices.Added
-	forceupdateprices := false
-	if pricestimesinceupdate > 86400/2 && forceupdate == true {
-		forceupdateprices = true
-	} else {
-		forceupdateprices = false
-	}
-
-	// If we're missing anything that wasn't in the database,
-	// Then we call upon the API to find these information.
-	if info.Recipes.Added < UpdatedRecipesStructTime {
-		info.Recipes = collections.InsertRecipesDocument(recipeID)
-	}
-
-	// We only need to force update the prices and profit calculations afterwards.
-	if info.Prices.Added < UpdatedPricesStructTime || forceupdateprices == true {
-		info.Prices = collections.InsertPricesDocument(info.Recipes.ItemResultTargetID)
-	}
-
-	if info.Profits.Added < UpdatedProfitsStructTime || forceupdateprofits == true {
-		// We need to re-initialize our maps
-		var matprofitmaps models.Matprofitmaps
-		matprofitmaps.Costs = make(map[int][10]int)
-		matprofitmaps.Ingredients = make(map[int][]int)
-		matprofitmaps.Total = make(map[int]int)
-		matprofitmaps.Names = make(map[int][]string)
-		matprofitmaps.IconID = make(map[int][]int)
-		matprofitmaps.IngredientAmounts = make(map[int][]int)
-		collections.FillProfitMaps(info, &matprofitmaps, forceupdateprices)
-		info.Matprofitmaps = &matprofitmaps
-
-		info.Profits = collections.InsertProfitsDocument(info, recipeID)
-	}
-
-	return info
-
 }
