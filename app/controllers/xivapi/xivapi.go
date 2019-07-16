@@ -89,9 +89,20 @@ func (coll Collections) SimplifyPricesDocument(itemID int) (*models.SimplePrices
 	// We should only just copy the value so that the fullprices will disappear
 	var result models.SimplePrices
 	result.ItemID = fullprices.ItemID
-	result.HistoryPrice = fullprices.Sargatanas.History[0].PricePerUnit
-	result.LowestMarketPrice = fullprices.Sargatanas.Prices[0].PricePerUnit
+
+	// We have to deal with cases that may not have history or current prices
+	if len(fullprices.Sargatanas.History) > 0 {
+		result.HistoryPrice = fullprices.Sargatanas.History[0].PricePerUnit
+	} else {
+		result.HistoryPrice = 0
+	}
 	result.OnMarketboard = fullprices.OnMarketboard
+	if result.OnMarketboard {
+		result.LowestMarketPrice = fullprices.Sargatanas.Prices[0].PricePerUnit
+	} else {
+		result.LowestMarketPrice = 0
+	}
+
 	result.Added = fullprices.Added
 	return &result, true
 }
