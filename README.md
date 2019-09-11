@@ -79,7 +79,7 @@ Tests can be built by the `marketboard/tests` folder.
 - [XIVAPI] (https://xivapi.com/)
 
 ## How to use?
-Development usage only. This is not yet released on an official server.
+[ffxivprofit!](http://ffxivprofit.com/)
 
 ## License
 MIT © [2019] (Jacob Nguyen)
